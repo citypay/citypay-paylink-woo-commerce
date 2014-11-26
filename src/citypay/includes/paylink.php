@@ -109,6 +109,9 @@ class CityPay_PayLink {
 	}
 
 	public function getJSON($testmode, $postback_url, $return_success_url, $return_failure_url) {
+                // note, call to this function at line 120 results in PHP warnings for lack of
+                // specified parameters; yet getJSON simply collates information that forms part of
+                // the current instance of CityPay_Paylink
 		$params=array_merge($this->request_cart,$this->request_client,$this->request_addr,$this->request_config);
 		return json_encode($params);
 	}
@@ -127,7 +130,7 @@ class CityPay_PayLink {
 			}
 		}
 		// Add the relevant data options
-		$curl_opts[CURLOPT_CUSTOMREQUEST] = 'POST';
+                $curl_opts[CURLOPT_POST] = true;
 		$curl_opts[CURLOPT_POSTFIELDS] = $json;
 		$curl_opts[CURLOPT_RETURNTRANSFER] = true;
 		$curl_opts[CURLOPT_HTTPHEADER] = array(
@@ -137,29 +140,33 @@ class CityPay_PayLink {
 		// Configure CURL with the required options
 		$ch = curl_init('https://secure.citypay.com/paylink3/create');
 		curl_setopt_array($ch, $curl_opts);
-		try {
-			$response = curl_exec($ch);
-		} catch (Exception $e) {
-			$err_text=$e->getMessage();
-			if (empty($err_text)) {
-				throw new Exception('Error generating PayLink token');
-			} else {
-				throw new Exception('Error generating PayLink token - '.$err_text);
-			}
-		}
-		curl_close($ch);
-		$results = json_decode($response,true);
-		if ($results['result']!=1) {
-			$this->debugLog($response);
-			$this->debugLog(print_r($results,true));
-			throw new Exception('Invalid response from PayLink');
-		}
-		$paylink_url=$results['url'];
-		if (empty($paylink_url)) {
-			$this->debugLog(print_r($results,true));
-			throw new Exception('No URL obtained from PayLink');
-		}
-		return $paylink_url;
+                $response = curl_exec($ch);
+                if ($response === FALSE)
+                {
+                    $req_info = curl_getinfo($ch);
+                    $req_errno = curl_errno($ch);
+                    $req_error = curl_error($ch);
+                    $this->debugLog("Request information - ".print_r($req_info, true));
+                    $this->debugLog("Request errno - ".print_r($req_errno, true));
+                    $this->debugLog("Request error - ".print_r($req_error, true));
+                    $this->debugLog("Response - ".print_r($response, true));
+                    curl_close($ch);
+                    throw new Exception('Error generating PayLink token');
+                }
+                
+                curl_close($ch);
+                $results = json_decode($response,true);
+                if ($results['result']!=1) {
+                        $this->debugLog($response);
+                        $this->debugLog(print_r($results,true));
+                        throw new Exception('Invalid response from PayLink');
+                }
+                $paylink_url=$results['url'];
+                if (empty($paylink_url)) {
+                        $this->debugLog(print_r($results,true));
+                        throw new Exception('No URL obtained from PayLink');
+                }
+                return $paylink_url;
 	}
 
 	public function validPostbackIP($remote_addr,$allowed_ip) {

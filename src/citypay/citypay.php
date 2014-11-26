@@ -251,7 +251,7 @@ function citypay_woocommerce_init() {
 				'testmode' => array(
 					'title'		=> __('Test Mode', 'woocommerce'),
 					'type'		=> 'checkbox',
-					'label'		=> __('Generate transaction is test mode', 'woocommerce'),
+					'label'		=> __('Generate transaction in test mode', 'woocommerce'),
 					'default'	=> 'yes',
 					'description'	=> __('Use this whilst testing your integration. You must disable test mode when you are ready to take live transactions'),
 				),
@@ -260,7 +260,7 @@ function citypay_woocommerce_init() {
 					'type'		=> 'checkbox',
 					'label'		=> __('Enable logging', 'woocommerce'),
 					'default'	=> 'no',
-					'description'	=> sprintf(__('Log payments events, such as postback requests, inside <code>woocommerce/logs/citypay-%s.txt</code>', 'woocommerce'), sanitize_file_name(wp_hash('citypay'))),
+					'description'	=> sprintf(__('Log payments events, such as postback requests, inside <code>wc-logs/citypay-%s.txt</code>', 'woocommerce'), sanitize_file_name(wp_hash('citypay'))),
 				)
 			);
 			if (!$this->woocom_is_v2) {
