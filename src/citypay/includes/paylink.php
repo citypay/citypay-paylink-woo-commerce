@@ -137,24 +137,29 @@ class CityPay_PayLink {
 			'Accept: application/json',
 			'Content-Type: application/json;charset=UTF-8',
 			'Content-Length: ' . strlen($json));
-		// Configure CURL with the required options
+                $curl_opts[CURLOPT_VERBOSE] = true;
+                $curl_stderr = fopen('php://temp', 'w+');
+                $curl_opts[CURLOPT_STDERR] = $curl_stderr;
 		$ch = curl_init('https://secure.citypay.com/paylink3/create');
 		curl_setopt_array($ch, $curl_opts);
                 $response = curl_exec($ch);
-                if ($response === FALSE)
+                curl_close($ch);
+                if (empty($response))
                 {
+                    rewind($curl_stderr);
+                    $req_stderr = stream_get_contents($curl_stderr, 4096);
+                    fclose($curl_stderr);
                     $req_info = curl_getinfo($ch);
                     $req_errno = curl_errno($ch);
                     $req_error = curl_error($ch);
                     $this->debugLog("Request information - ".print_r($req_info, true));
                     $this->debugLog("Request errno - ".print_r($req_errno, true));
                     $this->debugLog("Request error - ".print_r($req_error, true));
+                    $this->debugLog("cURL trace - ".print_r($req_stderr, true));
                     $this->debugLog("Response - ".print_r($response, true));
-                    curl_close($ch);
                     throw new Exception('Error generating PayLink token');
                 }
                 
-                curl_close($ch);
                 $results = json_decode($response,true);
                 if ($results['result']!=1) {
                         $this->debugLog($response);
