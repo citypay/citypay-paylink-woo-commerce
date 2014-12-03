@@ -143,7 +143,6 @@ class CityPay_PayLink {
 		$ch = curl_init('https://secure.citypay.com/paylink3/create');
 		curl_setopt_array($ch, $curl_opts);
                 $response = curl_exec($ch);
-                curl_close($ch);
                 if (empty($response))
                 {
                     rewind($curl_stderr);
@@ -152,6 +151,7 @@ class CityPay_PayLink {
                     $req_info = curl_getinfo($ch);
                     $req_errno = curl_errno($ch);
                     $req_error = curl_error($ch);
+                    curl_close($ch);
                     $this->debugLog("Request information - ".print_r($req_info, true));
                     $this->debugLog("Request errno - ".print_r($req_errno, true));
                     $this->debugLog("Request error - ".print_r($req_error, true));
@@ -159,7 +159,7 @@ class CityPay_PayLink {
                     $this->debugLog("Response - ".print_r($response, true));
                     throw new Exception('Error generating PayLink token');
                 }
-                
+                curl_close($ch);
                 $results = json_decode($response,true);
                 if ($results['result']!=1) {
                         $this->debugLog($response);
