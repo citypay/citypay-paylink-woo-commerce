@@ -125,6 +125,38 @@ function citypay_woocommerce_init() {
 				return $this->settings[$key];
 			}
 		}
+                
+                public function generate_diagnostics_html() {
+                        $curl_ca_bundle = ini_get('curl.cainfo');
+                        $openssl_ca_file = ini_get('openssl.cafile');
+                        $openssl_ca_path = ini_get('openssl.capath');
+                        ?>
+			<h3>Platform diagnostics</h3>
+			<table class="form-table">
+                            <tr><fieldset><th colspan="2">SSL Certificate Verification</th></tr>
+                            <tr>
+                                <th class="titledesc"><?php echo wp_kses_post('cURL CA Info'); ?></th>
+                                <td class="forminp">
+                                    <fieldset>
+                                        <legend class="screen-reader-class"><span><?php _e($curl_ca_bundle, 'woocommerce'); ?></span></legend>
+                                    </fieldset>
+                                </td>
+                            </tr><tr>
+                                <th class="titledesc"><?php echo wp_kses_post('OpenSSL CA File'); ?></th>
+                                <td class="formimp">
+                                    <fieldset>
+                                        <legend class="screen-reader-class"><span><?php _e($openssl_ca_file, 'woocommerce'); ?></span></legend>
+                                    </fieldset>
+                                </td>
+                            </tr><tr>
+                                <th class="titledesc"><?php echo wp_kses_post('OpenSSL CA Path'); ?></th>
+                                <fieldset>
+                                    <legend class="screen-reader-class"><span><?php _e($openssl_ca_path, 'woocommerce'); ?></span></legend>
+                                </fieldset>
+                            </td></tr>
+                        </table>
+			<?php
+                }
 
 		public function getCurrencyConfig($conf_num) {
 			if ($conf_num==1) { return $this->merchant_curr; }
@@ -192,10 +224,16 @@ function citypay_woocommerce_init() {
 			<?php $this->generate_settings_html(); ?>
 			</table><!--/.form-table-->
 			<?php
+                        $this->generate_diagnostics_html();
 		}
 
 		function init_form_fields() {
 			// Initialise Gateway Settings Form Fields
+                        if (version_compare($this->woocom_ver, '2.2.0') >= 0) {
+                            $log_path = trailingslashit(WC_LOG_DIR).'citypay-'.sanitize_file_name(wp_hash('citypay')).'.log';
+                        } else {
+                            $log_path = WC()->plugin_path().DIRECTORY_SEPARATOR.'logs'.DIRECTORY_SEPARATOR.'citypay.txt';
+                        }
 			$this->form_fields = array(
 				'enabled' => array(
 					'title'		=> __('Enable/Disable', 'woocommerce'),
@@ -260,13 +298,9 @@ function citypay_woocommerce_init() {
 					'type'		=> 'checkbox',
 					'label'		=> __('Enable logging', 'woocommerce'),
 					'default'	=> 'no',
-					'description'	=> sprintf(__('Log payments events, such as postback requests, inside <code>wc-logs/citypay-%s.txt</code>', 'woocommerce'), sanitize_file_name(wp_hash('citypay'))),
+					'description'	=> sprintf(__('Log payments events, such as postback requests, inside <code>%s</code>', 'woocommerce'), $log_path),
 				)
 			);
-			if (!$this->woocom_is_v2) {
-				$this->form_fields['debug']['description'] =
-					__('Log payments events, such as postback requests, inside <code>woocommerce/logs/citypay.txt</code>', 'woocommerce');
-			}
 		}
 
 		function debugLog($text) {
