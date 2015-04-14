@@ -1,10 +1,10 @@
 <?php
 /*
-Plugin Name: CityPay WooCommerce Payments
+Plugin Name: CityPay Payments
 Plugin URI: http://www.citypay.com/
 Description: CityPay PayLink Payment Pages for WooCommerce
-Version: 1.0.1
-Author: CityPay Limited
+Version: 1.0.0
+Author: CityPay
 Author URI: http://www.citypay.com/
 License: GPL2
 */
@@ -86,7 +86,7 @@ function citypay_woocommerce_init() {
 
 				// Logs
 				if ('yes'==$this->debug) {
-					$this->log = new WC_Logger();
+					$this->log = $woocommerce->logger();
 				}
 
 				if ($this->woocom_is_v2) {
@@ -125,7 +125,7 @@ function citypay_woocommerce_init() {
 				return $this->settings[$key];
 			}
 		}
-
+                
                 public function generate_diagnostics_html() {
                         $curl_ca_bundle = ini_get('curl.cainfo');
                         $openssl_ca_file = ini_get('openssl.cafile');
@@ -298,13 +298,9 @@ function citypay_woocommerce_init() {
 					'type'		=> 'checkbox',
 					'label'		=> __('Enable logging', 'woocommerce'),
 					'default'	=> 'no',
-					'description'	=> sprintf(__('Log payments events, such as postback requests, inside <code>'.WC_LOG_DIR.'citypay-%s.txt</code>', 'woocommerce'), sanitize_file_name(wp_hash('citypay'))),
+					'description'	=> sprintf(__('Log payments events, such as postback requests, inside <code>%s</code>', 'woocommerce'), $log_path),
 				)
 			);
-			if (!$this->woocom_is_v2) {
-				$this->form_fields['debug']['description'] =
-					__('Log payments events, such as postback requests, inside <code>woocommerce/logs/citypay.txt</code>', 'woocommerce');
-			}
 		}
 
 		function debugLog($text) {
@@ -349,7 +345,7 @@ function citypay_woocommerce_init() {
 				throw new Exception($message);
 			}
 
-			$price = (int)number_format((float)$order->get_total(),2,'','');
+			$price = (int)number_format((float)$order->get_order_total(),2,'','');
 			if ($this->testmode=='yes') {
 				$testmode=true;
 			} else {
@@ -397,12 +393,12 @@ function citypay_woocommerce_init() {
 			$order = new WC_Order($order_id);
 			$paylink_url = $this->get_request_url($order);
 
-			echo '<p>'.__('Thank you for your order, please click the button below to pay with CityPay.', 'woocommerce').'</p>';
+			echo '<p>'.__('Thank you for your order, please click the button below to pay via CityPay.', 'woocommerce').'</p>';
 
 			$m1=esc_js(__('Thank you for your order.', 'woocommerce'));
 			$m2=esc_js(__('You will now be transferred to the secure payment pages.', 'woocommerce'));
 
-			wc_enqueue_js('
+			$woocommerce->add_inline_js('
 				jQuery("body").block({
 					message: "'.$m1.'<br>'.$m2.'",
 					baseZ: 99999,

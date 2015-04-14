@@ -1,0 +1,29 @@
+To install the module, the zip file should be unpacked in the wordpress plugins directory. This is normally wp-content/plugins/
+
+After unpacking, you should have a citypay directory within the plugins directory:
+
+wp-content/plugins/citypay/citypay.php
+wp-content/plugins/citypay/includes/paylink.php
+
+To configure the module you need to login to the wordpress admin pages.
+
+From the Plugins menu, select 'Installed Plugins'
+
+Locate the plugin titled 'CityPay Payments' and click on Activate
+
+[activate_module.png]
+
+Now select 'Settings' from the 'WooCommerce' menu. Select the Checkout tab, and click on CityPay. 
+
+Here you enter your Merchant ID and Licence Key. You can also set the payment method name and description that will be shown at checkout time, and the order description that will be sent to CityPay as part of the transaction requests.
+
+You can include the WooCommerce order ID in the description by including {order_id} as part the description text.
+
+Once all the required details have been entered, click on Save Settings.
+
+[module_config.png]
+
+From the Checkou tab you can also configure the order in which payment methods are displayed, and which payment method is selected by default.
+
+[module_order.png]
+
