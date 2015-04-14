@@ -2,6 +2,9 @@
 
 <project name="citypay-woocommerce-payments" default="dist">
    
+    <!-- ============================================  -->
+    <!-- Target: clean                               -->
+    <!-- ============================================  -->
     <target name="clean">
         <echo msg="Cleaning directory structure" />
         <available file="./build" property="dir.build" />
@@ -20,7 +23,7 @@
     <!-- ============================================  -->
     <!-- Target: prepare                               -->
     <!-- ============================================  -->
-    <target name="prepare">
+    <target name="prepare" depends="clean">
         <echo msg="Making directory ./build" />
         <mkdir dir="./build" />
     </target>
@@ -33,7 +36,7 @@
         <copy todir="./build">
             <fileset dir="./wp-content/plugins">
                 <include name="citypay-paylink-woocommerce/**/*.php" />
-                <!-- include name="citypay-paylink-woocommerce/**/*.txt" / -->
+                <include name="citypay-paylink-woocommerce/**/*.txt" />
             </fileset>
         </copy>
     </target>
@@ -50,4 +53,5 @@
         </zip>
         <echo msg="Files copied and compressed in build directory OK!" />
     </target>
+    
 </project>

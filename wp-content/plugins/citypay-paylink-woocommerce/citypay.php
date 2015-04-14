@@ -1,10 +1,10 @@
 <?php
 /*
-Plugin Name: CityPay Payments
+Plugin Name: CityPay WooCommerce Payments
 Plugin URI: http://www.citypay.com/
 Description: CityPay PayLink Payment Pages for WooCommerce
 Version: 1.0.1
-Author: CityPay
+Author: CityPay Limited
 Author URI: http://www.citypay.com/
 License: GPL2
 */
