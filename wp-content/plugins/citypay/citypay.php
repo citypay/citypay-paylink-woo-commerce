@@ -86,7 +86,7 @@ function citypay_woocommerce_init() {
 
 				// Logs
 				if ('yes'==$this->debug) {
-					$this->log = $woocommerce->logger();
+					$this->log = new WC_Logger();
 				}
 
 				if ($this->woocom_is_v2) {
@@ -260,7 +260,7 @@ function citypay_woocommerce_init() {
 					'type'		=> 'checkbox',
 					'label'		=> __('Enable logging', 'woocommerce'),
 					'default'	=> 'no',
-					'description'	=> sprintf(__('Log payments events, such as postback requests, inside <code>woocommerce/logs/citypay-%s.txt</code>', 'woocommerce'), sanitize_file_name(wp_hash('citypay'))),
+					'description'	=> sprintf(__('Log payments events, such as postback requests, inside <code>'.WC_LOG_DIR.'citypay-%s.txt</code>', 'woocommerce'), sanitize_file_name(wp_hash('citypay'))),
 				)
 			);
 			if (!$this->woocom_is_v2) {
@@ -311,7 +311,7 @@ function citypay_woocommerce_init() {
 				throw new Exception($message);
 			}
 
-			$price = (int)number_format((float)$order->get_order_total(),2,'','');
+			$price = (int)number_format((float)$order->get_total(),2,'','');
 			if ($this->testmode=='yes') {
 				$testmode=true;
 			} else {
@@ -359,12 +359,12 @@ function citypay_woocommerce_init() {
 			$order = new WC_Order($order_id);
 			$paylink_url = $this->get_request_url($order);
 
-			echo '<p>'.__('Thank you for your order, please click the button below to pay via CityPay.', 'woocommerce').'</p>';
+			echo '<p>'.__('Thank you for your order, please click the button below to pay with CityPay.', 'woocommerce').'</p>';
 
 			$m1=esc_js(__('Thank you for your order.', 'woocommerce'));
 			$m2=esc_js(__('You will now be transferred to the secure payment pages.', 'woocommerce'));
 
-			$woocommerce->add_inline_js('
+			wc_enqueue_js('
 				jQuery("body").block({
 					message: "'.$m1.'<br>'.$m2.'",
 					baseZ: 99999,
