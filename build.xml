@@ -1,18 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project name="citypay-woocommerce-payments" default="dist">
+<project name="citypay-paylink-woocommerce" default="dist">
    
+    <property name="package" value="${phing.project.name}" override="true" />
+    <property name="version" value="1.0.2" override="true" />
+    <property name="builddir" value="./build" override="true" />
+    <property name="srcdir" value="${project.basedir}" override="true" />
+    
     <!-- ============================================  -->
     <!-- Target: clean                               -->
     <!-- ============================================  -->
     <target name="clean">
         <echo msg="Cleaning directory structure" />
-        <available file="./build" property="dir.build" />
+        <available file="${builddir}" property="dir.build" />
         <if>
             <isset property="dir.build" />
             <then>
                 <delete verbose="true" includeemptydirs="true">
-                    <fileset dir="./build">
+                    <fileset dir="${builddir}">
                         <include name="**/**" />
                     </fileset>
                 </delete>            
@@ -24,8 +29,8 @@
     <!-- Target: prepare                               -->
     <!-- ============================================  -->
     <target name="prepare" depends="clean">
-        <echo msg="Making directory ./build" />
-        <mkdir dir="./build" />
+        <echo msg="Making directory ${builddir}" />
+        <mkdir dir="${builddir}" />
     </target>
 
     <!-- ============================================  -->
@@ -33,7 +38,7 @@
     <!-- ============================================  -->
     <target name="build" depends="prepare">
         <echo msg="Copying files to build directory..." />
-        <copy todir="./build">
+        <copy todir="${builddir}">
             <fileset dir="./wp-content/plugins">
                 <include name="citypay-paylink-woocommerce/**/*.php" />
                 <include name="citypay-paylink-woocommerce/**/*.txt" />
@@ -46,8 +51,8 @@
     <!-- ============================================  -->
     <target name="dist" depends="build">
         <echo msg="Creating archive..." />
-        <zip destfile="./build/citypay-woocommerce-payments.zip">
-            <fileset dir="./build">
+        <zip destfile="${builddir}/${package}.zip">
+            <fileset dir="${builddir}">
                 <include name="**/*" />
             </fileset>
         </zip>
