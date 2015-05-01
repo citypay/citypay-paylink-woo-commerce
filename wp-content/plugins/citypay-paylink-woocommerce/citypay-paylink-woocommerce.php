@@ -3,7 +3,7 @@
 Plugin Name: CityPay WooCommerce Payments
 Plugin URI: http://www.citypay.com/
 Description: CityPay PayLink Payment Pages for WooCommerce
-Version: 1.0.2
+Version: 1.0.3
 Author: CityPay Limited
 Author URI: http://www.citypay.com/
 License: GPL2
@@ -323,11 +323,10 @@ function citypay_woocommerce_init() {
             $order_id	= $order->id;
             $order_key	= $order->order_key;
 
-            if ('yes'==$this->debug) {
-                $this->log->add('citypay', 'Generating payment form for order '.$order_num);
-                $this->log->add('citypay', 'OrderID '.$order_id);
-                $this->log->add('citypay', 'OrderKey '.$order_key);
-            }
+            $this->debugLog('Generating payment form for order '.$order_num);
+            $this->debugLog('OrderID '.$order_id);
+            $this->debugLog('OrderKey '.$order_key);
+
             // Authorised (Thank your page)
             $return_url = add_query_arg('utm_nooverride', '1', $this->get_return_url($order));
             $cancel_url = $order->get_cancel_order_url();
@@ -345,7 +344,7 @@ function citypay_woocommerce_init() {
                 $key	= $conf[1];
             } else {
                 $message = 'Order currency '.$currency.' not configured';
-                $this->log->add('citypay', $message);
+                $this->debugLog($message);
                 throw new Exception($message);
             }
 
@@ -383,7 +382,7 @@ function citypay_woocommerce_init() {
                 $paylink_url=$this->paylink->getPaylinkURL();
             } catch (Exception $e) {
                 $message=$e->getMessage();
-                $this->log->add('citypay', 'Error getting PayLink URL: '.$message);
+                $this->debugLog('Error getting PayLink URL: '.$message);
                 throw new Exception($message);
             }
             return $paylink_url;
@@ -458,14 +457,12 @@ function citypay_woocommerce_init() {
             // Check postback is valid (check signature using secret key)
             global $woocommerce;
 
-            if ('yes'==$this->debug) {
-                $this->log->add('citypay', 'Checking postback is valid...');
-            }
+            $this->debugLog('Checking postback is valid...');
             $order_key=$_GET['pl_orderkey'];
             $this->init_paylink();
             $postback_data = $this->paylink->getPostbackData();
             if (is_null($postback_data)) {
-                $this->log->add('citypay', 'Not postback data');
+                $this->debugLog('Not postback data');
                 throw new Exception('No postback data');
             }
             $conf=$this->paylink->getCurrencyConfig($postback_data['currency']);
@@ -473,15 +470,15 @@ function citypay_woocommerce_init() {
                 $mid	= (int)$conf[0];
                 $key	= $conf[1];
             } else {
-                $this->log->add('citypay', 'Order currency not configured');
+                $this->debugLog('Order currency not configured');
                 throw new Exception('Order currency not configured');
             }
             if (!$this->paylink->validatePostbackData($postback_data,$key)) {
-                $this->log->add('citypay', 'Unable to validate postback data');
+                $this->debugLog('Unable to validate postback data');
                 throw new Exception('Unable to validate postback data');
             }
             if ('yes'==$this->debug) {
-                $this->log->add('citypay', 'Postback data is valid');
+                $this->debugLog('Postback data is valid');
             }
             // Add the WooCommerce order key into the postback data
             $postback_data['order_key']=$order_key;
@@ -509,44 +506,34 @@ function citypay_woocommerce_init() {
             $postback_data = stripslashes_deep($postback_data);
             $order = $this->get_citypay_order($postback_data);
             $tranref=$postback_data['transno'];
-            if ('yes'==$this->debug) {
-                $this->log->add('citypay', 'Found order #'.$order->id);
-                $this->log->add('citypay', 'Transaction ref '.$tranref);
-                $this->log->add('citypay', 'Status '.$order->status);
-            }
+            $this->debugLog('Found order #'.$order->id);
+            $this->debugLog('Transaction ref '.$tranref);
+            $this->debugLog('Status '.$order->status);
             // Check order not already completed
             if ($order->status=='completed') {
-                if ('yes'==$this->debug) {
-                        $this->log->add('citypay', 'Aborting, Order #'.$order->id.' is already complete.');
-                }
+                $this->debugLog('Aborting, Order #'.$order->id.' is already complete.');
                 exit;
             }
             // Check transaction status
             if ($this->paylink->isAuthorised($postback_data)) {
                 // Transaction authorised
-                if ('yes'==$this->debug) {
-                        $this->log->add('citypay', 'Authorised');
-                }
+                $this->debugLog('Authorised');
                 update_post_meta($order->id, 'Transaction ID', $tranref);
                 if (!empty($postback_data['maskedpan'])) {
-                        update_post_meta($order->id, 'Card used', $postback_data['maskedpan']);
+                    update_post_meta($order->id, 'Card used', $postback_data['maskedpan']);
                 }
                 $surcharge=floatval($postback_data['surcharge']);
                 if ($surcharge>0) {
-                        // Surcharge was added. Include in the additional data for the transaction,
-                        // using the text version sent in the results.
-                        update_post_meta($order->id, 'Surcharge', $postback_data['surcharge']);
+                    // Surcharge was added. Include in the additional data for the transaction,
+                    // using the text version sent in the results.
+                    update_post_meta($order->id, 'Surcharge', $postback_data['surcharge']);
                 }
                 $order->add_order_note(sprintf(__('Payment completed, ref %s.', 'woocommerce'),$tranref));
                 $order->payment_complete();
-                if ('yes'==$this->debug) {
-                        $this->log->add('citypay', 'Payment complete.');
-                }
+                $this->debugLog('Payment complete.');
             } else {
                 // Declined/Cancelled
-                if ('yes'==$this->debug) {
-                        $this->log->add('citypay', 'Not authorised: '.$postback_data['errorid'].' '.$postback_data['errormessage']);
-                }
+                $this->debugLog('Not authorised: '.$postback_data['errorid'].' '.$postback_data['errormessage']);
                 $order->update_status('failed', sprintf(__('Payment %s declined - %s: %s.', 'woocommerce'), $tranref, $postback_data['errorid'], $postback_data['errormessage']));
             }
             exit;
@@ -556,16 +543,12 @@ function citypay_woocommerce_init() {
             // Identify the order from the cart ID
             $order_id	= preg_replace('/^OrderID#/','',$postback_data['identifier']);
             $order_key	= $postback_data['order_key'];
-            if ($this->debug=='yes') {
-                $this->log->add('citypay', 'Order ID '.$order_id.', key '.$order_key);
-            }
+            $this->debugLog('Order ID '.$order_id.', key '.$order_key);
             $order = new WC_Order($order_id);
             // Validate key
             if ($order->order_key!==$order_key) {
-                if ($this->debug=='yes') {
-                        $this->log->add('citypay', 'Error: Order Key does not match invoice.');
-                        $this->log->add('citypay', 'Expected '.$order->order_key);
-                }
+                $this->debugLog('Error: Order Key does not match invoice.');
+                $this->debugLog('Expected '.$order->order_key);
                 exit;
             }
             return $order;
