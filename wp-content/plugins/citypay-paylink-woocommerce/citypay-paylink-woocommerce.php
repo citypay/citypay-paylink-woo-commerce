@@ -420,7 +420,7 @@ function citypay_woocommerce_init() {
                                     lineHeight:	"24px",
                             }
                     });
-                    setTimeout(function() { jQuery("#submit_citpay_payment_form").click(); }, 2000);
+                    jQuery("#submit_citpay_payment_form").trigger("click");
             ');
             echo '<form action="'.esc_url($paylink_url).'" method="get" id="citpay_payment_form" target="_top">'.
                     '<input type="submit" class="button alt" id="submit_citpay_payment_form" value="'.__('Pay via CityPay', 'woocommerce').'" /> <a class="button cancel" href="'.esc_url($order->get_cancel_order_url()).'">'.__('Cancel order &amp; restore cart', 'woocommerce').'</a></form>';
