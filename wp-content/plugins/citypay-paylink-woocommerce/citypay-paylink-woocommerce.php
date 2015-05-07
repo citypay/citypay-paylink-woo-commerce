@@ -3,7 +3,7 @@
 Plugin Name: CityPay WooCommerce Payments
 Plugin URI: http://www.citypay.com/
 Description: CityPay PayLink Payment Pages for WooCommerce
-Version: 1.0.3
+Version: 1.0.4
 Author: CityPay Limited
 Author URI: http://www.citypay.com/
 License: GPL2
@@ -420,7 +420,7 @@ function citypay_woocommerce_init() {
                                     lineHeight:	"24px",
                             }
                     });
-                    jQuery("#submit_citpay_payment_form").click();
+                    setTimeout(function() { jQuery("#submit_citpay_payment_form").click(); }, 2000);
             ');
             echo '<form action="'.esc_url($paylink_url).'" method="get" id="citpay_payment_form" target="_top">'.
                     '<input type="submit" class="button alt" id="submit_citpay_payment_form" value="'.__('Pay via CityPay', 'woocommerce').'" /> <a class="button cancel" href="'.esc_url($order->get_cancel_order_url()).'">'.__('Cancel order &amp; restore cart', 'woocommerce').'</a></form>';
