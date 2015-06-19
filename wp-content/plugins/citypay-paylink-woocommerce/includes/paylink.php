@@ -108,12 +108,9 @@ class CityPay_PayLink {
 		}
 	}
 
-	public function getJSON($testmode, $postback_url, $return_success_url, $return_failure_url) {
-                // note, call to this function at line 120 results in PHP warnings for lack of
-                // specified parameters; yet getJSON simply collates information that forms part of
-                // the current instance of CityPay_Paylink
-		$params=array_merge($this->request_cart,$this->request_client,$this->request_addr,$this->request_config);
-		return json_encode($params);
+	public function getJSON() {
+            $params=array_merge($this->request_cart,$this->request_client,$this->request_addr,$this->request_config);
+            return json_encode($params);
 	}
 
 	public function getPaylinkURL($curl_options=null) {
