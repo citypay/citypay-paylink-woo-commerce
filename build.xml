@@ -3,7 +3,7 @@
 <project name="citypay-paylink-woocommerce" default="dist">
     
     <property name="package" value="${phing.project.name}" override="true" />
-    <property name="version" value="1.0.5" override="true" />
+    <property name="version" value="1.0.6" override="true" />
    
     <property name="builddir" value="./build" override="true" />
     <property name="srcdir" value="${project.basedir}" override="true" />
