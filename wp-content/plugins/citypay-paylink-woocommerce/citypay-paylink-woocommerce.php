@@ -3,7 +3,7 @@
 Plugin Name: CityPay WooCommerce Payments
 Plugin URI: http://www.citypay.com/
 Description: CityPay PayLink Payment Pages for WooCommerce
-Version: 1.0.6
+Version: 1.0.7
 Author: CityPay Limited
 Author URI: http://www.citypay.com/
 License: GPL2
@@ -72,7 +72,7 @@ function citypay_woocommerce_init() {
             $this->init_settings();
             if (version_compare($this->woocom_ver,$this->min_wc_ver)>=0) {
 
-                $this->postback_url = str_replace('https:', 'http:', add_query_arg('wc-api', 'WC_Gateway_CityPay', home_url('/')));
+                $this->postback_url = add_query_arg('wc-api', 'WC_Gateway_CityPay', home_url('/'));
                 $this->title			= $this->get_config_option('title');
                 $this->description		= $this->get_config_option('description');
                 $this->merchant_curr		= $this->get_config_option('merchant_curr');
@@ -306,6 +306,8 @@ function citypay_woocommerce_init() {
                             __('Log payments events, such as postback requests, inside <code>woocommerce/logs/citypay.txt</code>', 'woocommerce');
             }
         }
+        
+        //function validate_licence_key_field($key);
 
         function debugLog($text) {
             if ('yes'==$this->debug) {

@@ -3,8 +3,8 @@ Contributors: _citypay_to_be_confirmed_
 Tags: ecommerce, e-commerce, woocommerce, payment gateway
 Donate link: http://citypay.com/
 Requires at least: 4.0
-Tested up to: 4.1
-Stable tag: 1.0.2
+Tested up to: 4.5.1
+Stable tag: 1.0.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -147,6 +147,19 @@ configuration file for PHP using the curl.cainfo configuration setting.
 
 
 == Changelog ==
+
+= 1.0.7 =
+
+* Refer postback messages to the http / https server used by Wordpress
+  preventing problems testing.
+
+= 1.0.6 =
+
+= 1.0.5 =
+
+= 1.0.4 =
+
+= 1.0.3 =
 
 = 1.0.2 =
 
