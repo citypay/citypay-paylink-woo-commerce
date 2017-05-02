@@ -1,6 +1,8 @@
 CityPay Paylink WooCommerce Plugin
 ==================================
 
+![WooCommerce Logo](assets/woocommerce.png)
+
 CityPay Paylink WooCommerce is a plugin that supplements WooCommerce with
 support for payment processing using CityPay hosted payment forms.
 
