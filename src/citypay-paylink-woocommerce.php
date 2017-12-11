@@ -3,7 +3,7 @@
 Plugin Name: CityPay Payments
 Plugin URI: https://github.com/citypay/citypay-paylink-woo-commerce
 Description: CityPay PayLink Payment Pages for WooCommerce
-Version: 1.0.7
+Version: 1.1.0
 Author: CityPay Limited
 Author URI: https://citypay.com
 License: GPL2
@@ -26,37 +26,12 @@ along with {Plugin Name}. If not, see {URI to Plugin License}.
 
 defined('ABSPATH') or die('Direct access to this executable is not permitted');
 
-if (!defined('WP_CONTENT_URL')) {
-    define('WP_CONTENT_URL', get_option('siteurl') . '/wp-content');
-}
-if (!defined('WP_PLUGIN_URL')) {
-    define('WP_PLUGIN_URL', WP_CONTENT_URL . '/plugins');
-}
-if (!defined('WP_CONTENT_DIR')) {
-    define('WP_CONTENT_DIR', ABSPATH . 'wp-content');
-}
-if (!defined('WP_PLUGIN_DIR')) {
-    define('WP_PLUGIN_DIR', WP_CONTENT_DIR . '/plugins');
-}
-
-if (!function_exists('pl_wc_list_network_plugins')) {
-    function pl_wc_list_network_plugins()
-    {
-        if (!is_multisite()) {
-            return false;
-        }
-        $sitewide_plugins = array_keys((array)get_site_option('active_sitewide_plugins'));
-        if (!is_array($sitewide_plugins)) {
-            return false;
-        }
-        return $sitewide_plugins;
-    }
-}
-
 
 function citypay_woocommerce_init()
 {
-    class WC_Gateway_CityPay extends WC_Gateway_CityPay_Base {}
+    class WC_Gateway_CityPay extends WC_Gateway_CityPay_Base
+    {
+    }
 }
 
 function citypay_woocommerce_add_gateway($methods)
@@ -65,16 +40,15 @@ function citypay_woocommerce_add_gateway($methods)
     return $methods;
 }
 
-if (in_array('woocommerce/woocommerce.php', (array)get_option('active_plugins'))
-    || in_array('woocommerce/woocommerce.php', (array)pl_wc_list_network_plugins())) {
+if (in_array('woocommerce/woocommerce.php', (array)get_option('active_plugins'))) {
     add_action('plugins_loaded', 'citypay_woocommerce_init', 0);
     add_filter('woocommerce_payment_gateways', 'citypay_woocommerce_add_gateway');
 }
 
-
 /** @noinspection PhpUndefinedClassInspection */
 class WC_Gateway_CityPay_Base extends WC_Payment_Gateway
 {
+
     public $min_wc_ver = "1.6.0";
     public $id = 'citypay';
     public $debug = 'no';
@@ -116,11 +90,12 @@ class WC_Gateway_CityPay_Base extends WC_Payment_Gateway
         $this->has_fields = false;    // No additional fields in checkout page
         $this->method_title = __('CityPay', 'woocommerce');
 
-        // Load the settings.
         $this->init_paylink();
-        $this->init_form_fields();    // Config page fields
+        $this->init_form_fields();
         $this->init_settings();
-        if (version_compare($this->woocom_ver, $this->min_wc_ver) >= 0) {
+        if (version_compare($this->woocom_ver, $this->min_wc_ver) == -1) {
+            $this->enabled = false;
+        } else {
 
             $this->postback_url = add_query_arg('wc-api', 'WC_Gateway_CityPay', home_url('/'));
             $this->title = $this->get_config_option('title');
@@ -132,9 +107,7 @@ class WC_Gateway_CityPay_Base extends WC_Payment_Gateway
             $this->testmode = $this->get_config_option('testmode');
             $this->debug = $this->get_config_option('debug');
             $this->form_submission_method = true;
-            $this->endpoint = 'https://secure.citypay.com/paylink3/';
-            $this->testurl = 'https://secure.citypay.com/paylink3/';
-            $this->liveurl = 'https://secure.citypay.com/paylink3/';
+
 
             // Logs
             if ('yes' == $this->debug) {
@@ -156,15 +129,14 @@ class WC_Gateway_CityPay_Base extends WC_Payment_Gateway
                 // Add hook for postbacks
                 add_action('init', array(&$this, 'check_postback'));
             }
-        } else {
-            $this->enabled = false;
+
         }
     }
 
     public function init_paylink()
     {
         if (!class_exists('CityPay_PayLink')) {
-            require_once 'includes/paylink.php';
+            require_once 'paylink.php';
         }
         if (is_null($this->paylink)) {
             $this->paylink = new CityPay_PayLink($this);
@@ -180,47 +152,6 @@ class WC_Gateway_CityPay_Base extends WC_Payment_Gateway
         }
     }
 
-    public function generate_diagnostics_html()
-    {
-        $curl_ca_bundle = ini_get('curl.cainfo');
-        $openssl_ca_file = ini_get('openssl.cafile');
-        $openssl_ca_path = ini_get('openssl.capath');
-        ?>
-        <h3>Platform diagnostics</h3>
-        <table class="form-table">
-            <tr>
-                <th colspan="2">SSL Certificate Verification</th>
-            </tr>
-            <tr>
-                <th class="titledesc"><?php echo wp_kses_post('cURL CA Info'); ?></th>
-                <td class="forminp">
-                    <fieldset>
-                        <legend class="screen-reader-class">
-                            <span><?php esc_html_e($curl_ca_bundle, 'woocommerce'); ?></span></legend>
-                    </fieldset>
-                </td>
-            </tr>
-            <tr>
-                <th class="titledesc"><?php echo wp_kses_post('OpenSSL CA File'); ?></th>
-                <td class="formimp">
-                    <fieldset>
-                        <legend class="screen-reader-class">
-                            <span><?php esc_html_e($openssl_ca_file, 'woocommerce'); ?></span></legend>
-                    </fieldset>
-                </td>
-            </tr>
-            <tr>
-                <th class="titledesc"><?php echo wp_kses_post('OpenSSL CA Path'); ?></th>
-                <td class="formimp">
-                    <fieldset>
-                        <legend class="screen-reader-class">
-                            <span><?php esc_html_e($openssl_ca_path, 'woocommerce'); ?></span></legend>
-                    </fieldset>
-                </td>
-            </tr>
-        </table>
-        <?php
-    }
 
     public function getCurrencyConfig($conf_num)
     {
@@ -266,47 +197,12 @@ class WC_Gateway_CityPay_Base extends WC_Payment_Gateway
     public function admin_options()
     {
         if (version_compare($this->woocom_ver, $this->min_wc_ver) >= 0) {
-            $this->show_admin_options();
+            include('admin_options.php');
         } else {
-            $this->not_available();
+            include('not_available.php');
         }
     }
 
-    public function not_available()
-    {
-        ?>
-        <div class="inline error"><p>
-                <strong><?php esc_html_e('Gateway Disabled', 'woocommerce'); ?></strong>:
-                <?php esc_html_e(sprintf('Requires WooCommerce %s or later', $this->min_wc_ver), 'woocommerce'); ?>
-            </p></div>
-        <?php
-    }
-
-    public function show_admin_options()
-    {
-        // Admin Panel Options
-        $configured = true;
-        if ((empty($this->merchant_curr)) || (empty($this->merchant_id)) || (empty($this->licence_key))) {
-            $configured = false;
-        }
-        ?>
-        <h3><?php esc_html_e('CityPay PayLink', 'woocommerce'); ?></h3>
-        <?php if (!$configured) : ?>
-        <div id="wc_get_started">
-            <span class="main"><?php esc_html_e('CityPay PayLink Payment Page', 'woocommerce'); ?></span>
-            <span><a href="http://www.citypay.com/"
-                     target="_blank">CityPay</a> <?php esc_html_e('are a PCI DSS Level 1 certified payment gateway. We guarantee that we will handle the storage, processing and transmission of your customer\'s cardholder data in a manner which meets or exceeds the highest standards in the industry.', 'woocommerce'); ?></span>
-            <span><br><b>NOTE: </b> You must enter your merchant ID and licence key</span>
-        </div>
-    <?php else : ?>
-        <p><?php esc_html_e('CityPay PayLink Payment Page', 'woocommerce'); ?></p>
-    <?php endif; ?>
-        <table class="form-table">
-            <?php $this->generate_settings_html(); ?>
-        </table><!--/.form-table-->
-        <?php
-        $this->generate_diagnostics_html();
-    }
 
     function init_form_fields()
     {
@@ -469,7 +365,7 @@ class WC_Gateway_CityPay_Base extends WC_Payment_Gateway
             $return_url,
             $cancel_url);
         try {
-            $paylink_url = $this->paylink->getPaylinkURL();
+            $paylink_url = $this->paylink->createPaylinkToken();
         } catch (Exception $e) {
             $message = $e->getMessage();
             $this->debugLog('Error getting PayLink URL: ' . $message);
@@ -606,7 +502,6 @@ class WC_Gateway_CityPay_Base extends WC_Payment_Gateway
     function successful_request($postback_data)
     {
         // Postback has been recieved and validated, update order details
-        $onhold = 0;
         $postback_data = stripslashes_deep($postback_data);
         $order = $this->get_citypay_order($postback_data);
         $tranref = $postback_data['transno'];
@@ -617,7 +512,7 @@ class WC_Gateway_CityPay_Base extends WC_Payment_Gateway
         // taken from
         // payment_complete()
         // Most of the time this should mark an order as 'processing' so that admin can process/post the items.
-	    // If the cart contains only downloadable items then the order is 'completed' since the admin needs to take no action.
+        // If the cart contains only downloadable items then the order is 'completed' since the admin needs to take no action.
         if ($order->status == 'processing' || $order->status == 'completed') {
             $this->debugLog('Aborting, Order #' . $order->get_id() . ' is already complete.');
             return;
