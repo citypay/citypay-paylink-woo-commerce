@@ -1,0 +1,31 @@
+version: "3"
+services:
+    wpdatabase:
+        container_name: wpdatabase
+        image: mysql:5.7
+        ports:
+                - "127.0.0.1:3306:3306"
+        volumes:
+                - ./db:/var/lib/mysql
+        environment:
+                MYSQL_DATABASE: wordpress
+                MYSQL_ROOT_PASSWORD: P4ssw0rd!
+        networks:
+                - wordpressnet
+    wordpress:
+        image: citypay/woocommerce:dev
+        ports:
+                - 127.0.0.1:80:80
+        environment:
+               WORDPRESS_DB_HOST: wpdatabase
+               WORDPRESS_DB_NAME: wordpress
+               WORDPRESS_DB_USER: root
+               WORDPRESS_DB_PASSWORD: P4ssw0rd!
+               CITYPAY_PLUGIN_VERSION: 1.1.0
+        depends_on:
+                - wpdatabase
+        networks:
+                - wordpressnet
+networks:
+    wordpressnet:
+            driver: bridge
