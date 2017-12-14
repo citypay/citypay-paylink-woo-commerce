@@ -8,7 +8,7 @@ class CityPay_PayLink
 
     /**
      * The payment module which instantiated this class
-     * @var WC_Gateway_CityPay
+     * @var WC_Gateway_CityPayPaylink
      */
     private $pay_module;
     private $request_addr = array();
@@ -23,11 +23,10 @@ class CityPay_PayLink
     function __construct()
     {
         $args = func_get_args();
-        if (count($args) == 1) {
-            $this->pay_module = $args[0];
-        } else {
+        if (count($args) == 0) {
             throw new Exception('Payment module must be provided to constructor.');
         }
+        $this->pay_module = $args[0];
     }
 
     private function debugLog($text)
@@ -152,11 +151,11 @@ class CityPay_PayLink
             }
             $result = $packet['result'];
             if ($result != 1) {
-                $e = '';
+                $errors = '';
                 foreach ($packet['errors'] as $error) {
-                    $e = $e . '<li>' . $error['code'] . ': ' . $error['msg'] . '</li>';
+                    $errors = $errors . '<li>' . $error['code'] . ': ' . $error['msg'] . '</li>';
                 }
-                throw new Exception('Unable to process to CityPay. <ul>' . $e . '</ul>');
+                throw new Exception('Unable to process to CityPay. <ul>' . $errors . '</ul>');
             }
             $paylink_url = $packet['url'];
             $this->debugLog($paylink_url);

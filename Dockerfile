@@ -1,8 +1,8 @@
 FROM wordpress:4.9-php7.1-apache
+LABEL maintainer="Gary Feltham <gary.feltham@citypay.com>"
 
 RUN apt-get update && apt-get install -y \
     unzip \
-    wget \
     less \
     vim \
     && rm -rf /var/lib/apt/lists/*
@@ -13,7 +13,7 @@ RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli
 	&& wp --info
 
 # Install ngrok to monitor for postbacks
-RUN wget https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-386.zip \
+RUN curl -O https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-386.zip \
     && unzip ngrok-stable-linux-386.zip \
     && cp ngrok /usr/bin/ngrok
 

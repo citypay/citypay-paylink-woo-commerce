@@ -24,7 +24,7 @@ add_filter('woocommerce_payment_gateways', 'add_citypay_gateway_class');
 
 function add_citypay_gateway_class($methods)
 {
-    $methods[] = 'WC_Gateway_CityPay';
+    $methods[] = 'WC_Gateway_CityPayPaylink';
     return $methods;
 }
 
@@ -37,12 +37,12 @@ function init_citypay_gateway_class()
         add_action('admin_notices', 'citypay_gateway_woocommerce_error');
         return;
     }
-    require_once(dirname(__FILE__) . '/WC_Gateway_CityPay.php');
+    require_once(dirname(__FILE__) . '/WC_Gateway_CityPay_Paylink.php');
 }
 
 function citypay_gateway_woocommerce_error()
 {
-    echo '<div class="error"><p>' . __('CityPay Gateway plugin requires WooCommerce to be activated.', 'wc-payment-gateway-citypay') . '</p></div>';
+    echo '<div class="error"><p>CityPay Gateway plugin requires WooCommerce to be activated.</p></div>';
 }
 
 ?>
