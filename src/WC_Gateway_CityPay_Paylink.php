@@ -4,6 +4,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+require_once(dirname(__FILE__) . '/WC_Gateway_CityPay.php');
 require_once(dirname(__FILE__) . '/wc-paylink-client.php');
 
 /** @noinspection PhpUndefinedClassInspection */
@@ -29,11 +30,19 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
 
     public function __construct()
     {
+        parent::__construct();
+
         $this->id = 'citypay';
         $context = get_file_data(__DIR__ . '/wc-payment-gateway-citypay.php', []);
         $this->version = $context['Version'];
+
+
+        $this->enabled = $this->get_option('enabled');
+        $this->debug = $this->get_option('debug');
         $this->icon = plugin_dir_url(__FILE__) . 'assets/logo-x500-greyscale.png';
+        $this->testmode = $this->get_option('testmode');
         $this->has_fields = false;    // No additional fields in checkout page
+        $this->log = new WC_Logger();
         $this->method_title = __('CityPay', 'wc-payment-gateway-citypay');
         $this->method_description = __('Accept payments using CityPay Paylink', 'wc-payment-gateway-citypay');
 //        $this->supports = array('products');
@@ -178,7 +187,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
             }
 
             $order_num = ltrim($order->get_order_number(), '#');
-            $order_key = $order->order_key;
+            $order_key = $order->get_order_key();
             $cart_id = 'OrderID#' . $order_id;
             $cart_desc = trim($this->cart_desc);
             if (empty($cart_desc)) {
@@ -195,15 +204,15 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
             );
             $this->paylink->setRequestClient($this->version);
             $this->paylink->setCardHolder(
-                $order->billing_first_name,
-                $order->billing_last_name,
-                $order->billing_address_1,
-                $order->billing_address_2,
-                $order->billing_city,
-                $order->billing_state,
-                $order->billing_postcode,
-                $order->billing_country,
-                $order->billing_email
+                $order->get_billing_first_name(),
+                $order->get_billing_last_name(),
+                $order->get_billing_address_1(),
+                $order->get_billing_address_2(),
+                $order->get_billing_city(),
+                $order->get_billing_state(),
+                $order->get_billing_postcode(),
+                $order->get_billing_country(),
+                $order->get_billing_email()
             );
             $this->paylink->setRequestConfig(
                 $this->testmode == 'yes',

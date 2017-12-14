@@ -12,10 +12,6 @@ class WC_Gateway_CityPay extends WC_Payment_Gateway
 
     public function __construct()
     {
-        $this->enabled = $this->get_option('enabled');
-        $this->debug = $this->get_option('debug');
-        $this->testmode = $this->get_option('testmode');
-        $this->log = new WC_Logger();
     }
 
     /* Check if the module is available for the current checkout process */
