@@ -98,13 +98,12 @@ class CityPay_PayLink
                 'redirect_success' => $return_success_url,
                 'redirect_failure' => $return_failure_url)
         );
+        $this->request_config['config']['redirect_params'] = false;
+        $this->request_config['config']['postback'] = $postback_url;
+        $this->request_config['config']['postback_policy'] = 'sync';
         if (empty($postback_url)) {
             $this->request_config['config']['redirect_params'] = true;
             $this->request_config['config']['postback_policy'] = 'none';
-        } else {
-            $this->request_config['config']['redirect_params'] = false;
-            $this->request_config['config']['postback'] = $postback_url;
-            $this->request_config['config']['postback_policy'] = 'sync';
         }
     }
 
@@ -144,27 +143,28 @@ class CityPay_PayLink
 
         if (is_wp_error($response)) {
             throw new Exception("Unable to create a payment " . $response->get_error_message());
-        } else {
-            $packet = json_decode($body, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new Exception("Unable to obtain result from CityPay: " . json_last_error_msg());
-            }
-            $result = $packet['result'];
-            if ($result != 1) {
-                $errors = '';
-                foreach ($packet['errors'] as $error) {
-                    $errors = $errors . '<li>' . $error['code'] . ': ' . $error['msg'] . '</li>';
-                }
-                throw new Exception('Unable to process to CityPay. <ul>' . $errors . '</ul>');
-            }
-            $paylink_url = $packet['url'];
-            $this->debugLog($paylink_url);
-            if (empty($paylink_url)) {
-                throw new Exception('CityPay Paylink is currently unavailable');
-            }
-
-            return $packet;
         }
+
+        $packet = json_decode($body, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception("Unable to obtain result from CityPay: " . json_last_error_msg());
+        }
+        $result = $packet['result'];
+        if ($result != 1) {
+            $errors = '';
+            foreach ($packet['errors'] as $error) {
+                $errors = $errors . '<li>' . $error['code'] . ': ' . $error['msg'] . '</li>';
+            }
+            throw new Exception('Unable to process to CityPay. <ul>' . $errors . '</ul>');
+        }
+        $paylink_url = $packet['url'];
+        $this->debugLog($paylink_url);
+        if (empty($paylink_url)) {
+            throw new Exception('CityPay Paylink is currently unavailable');
+        }
+
+        return $packet;
+
     }
 
 }
