@@ -339,6 +339,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
                 $authcode = $postback_data['authcode'];
                 $result = $postback_data['authorised'];
                 $expmonth = str_pad($postback_data['expmonth'], 2, '0', STR_PAD_LEFT);
+                $is_test = $postback_data['mode'] == 'test';
 
                 $this->debugLog('Found order #' . $order->get_id());
                 $this->debugLog('Trans No ' . $trans_no);
@@ -352,11 +353,8 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
                     $maskedpan = $postback_data['cardscheme'] . '/' . $postback_data['maskedpan'] . ' ' . $postback_data['expyear'] . '/' . $expmonth;
                     update_post_meta($order->get_id(), 'Card used', $maskedpan);
 
-                    if ($postback_data['mode'] == 'test') {
-                        $order->add_order_note(sprintf(__('Test CityPay Postback Payment OK. TransNo: %s, AuthCode: %s', 'wc-payment-gateway-citypay'), $trans_no, $authcode));
-                    } else {
-                        $order->add_order_note(sprintf(__('CityPay Postback Payment OK. TransNo: %s, AuthCode: %s', 'wc-payment-gateway-citypay'), $trans_no, $authcode));
-                    }
+                    $order->add_order_note(sprintf(__('%s CityPay Postback Payment OK. TransNo: %s, AuthCode: %s',
+                        'wc-payment-gateway-citypay'), $is_test ? "Test" : "", $trans_no, $authcode));
 
                     $order->payment_complete();
                     $this->debugLog('Authorised, Payment complete.');
