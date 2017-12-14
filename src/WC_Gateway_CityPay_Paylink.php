@@ -253,9 +253,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
             throw new Exception(__('You cannot use this currency with CityPay.', 'wc-payment-gateway-citypay'));
         }
 
-        $order = wc_get_order($order_id);
         $this->debugLog("process_payment(" . $order_id . ')');
-
         $paylinkUrl = $this->generate_paylink_url($order_id);
 
         // seemingly we need to forward to a payment url (handled by receipt_page)
@@ -298,10 +296,13 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
     {
         try {
             // Check for postback requests
-            if (isset($_GET['pl_orderkey'])) {
+            $pl_orderkey = $_GET['pl_orderkey'];
+            $pl_orderid = $_GET['order_id'];
+
+            if (isset($pl_orderkey) && isset($pl_orderid)) {
                 @ob_clean();    // Erase output buffer
-                $order_key = sanitize_text_field($_GET['pl_orderkey']);
-                $order_id = sanitize_text_field($_GET['order_id']);
+                $order_key = sanitize_text_field($pl_orderkey);
+                $order_id = sanitize_text_field($pl_orderid);
                 $order = wc_get_order($order_id);
 
                 // Check order not already completed
