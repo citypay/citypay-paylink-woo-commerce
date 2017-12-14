@@ -1,7 +1,7 @@
 FROM wordpress:4.9-php7.1-apache
 LABEL maintainer="Gary Feltham <gary.feltham@citypay.com>"
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
     less \
     vim \

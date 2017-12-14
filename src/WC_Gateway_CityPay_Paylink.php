@@ -376,7 +376,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
 
 
         } catch (Exception $e) {
-            wp_die("CityPay Postback Error: " . sanitize_text_field($e->getMessage()));
+            wp_die("CityPay Postback Error: " . esc_html_e($e->getMessage()));
         }
 
     }
