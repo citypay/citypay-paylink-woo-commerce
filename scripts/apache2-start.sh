@@ -26,6 +26,8 @@ echo ========== Updated Plugin List =============
 wp --allow-root plugin list
 echo ============================================
 
+echo Starting NGROK...
+ngrok http -authtoken=$NGROK_AUTHTOKEN -log=ngrok.log 80 &
 
 # run apache in the foreground...
 apache2-foreground
