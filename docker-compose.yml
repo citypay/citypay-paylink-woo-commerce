@@ -1,0 +1,34 @@
+version: "3"
+services:
+    wpdatabase:
+        container_name: wpdatabasedocker-compos
+        image: mysql:5.7
+        ports:
+                - "127.0.0.1:3306:3306"
+        volumes:
+                - ./db:/var/lib/mysql
+        environment:
+                MYSQL_DATABASE: wordpress
+        env_file: .env
+        networks:
+                - wordpressnet
+    wordpress:
+        image: citypay/woocommerce:dev
+        ports:
+                - 127.0.0.1:80:80
+                - 127.0.0.1:4040:4040
+        environment:
+               WORDPRESS_DB_HOST: wpdatabase
+               WORDPRESS_DB_NAME: wordpress
+               WORDPRESS_DB_USER: root
+               CITYPAY_PLUGIN_VERSION: 1.1.0
+        depends_on:
+                - wpdatabase
+        env_file: .env
+        networks:
+                - wordpressnet
+#        volumes:
+#          - ./src:/var/www/html/wp-content/plugins/citypay-paylink-woocommerce
+networks:
+    wordpressnet:
+            driver: bridge

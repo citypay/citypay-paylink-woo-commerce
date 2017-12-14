@@ -1,11 +1,10 @@
 === CityPay Paylink WooCommerce ===
-Contributors: _citypay_to_be_confirmed_
+Contributors: citypay
 Tags: ecommerce, e-commerce, woocommerce, payment gateway
-Donate link: http://citypay.com/
 Requires at least: 4.0
 Tested up to: 4.5.1
 Stable tag: 1.0.7
-License: GPLv2 or later
+License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 CityPay Paylink WooCommerce is a plugin that supplements WooCommerce with
@@ -147,6 +146,10 @@ configuration file for PHP using the curl.cainfo configuration setting.
 
 
 == Changelog ==
+
+= 1.1.0 =
+
+* Refactored library to remove curl and redundant code
 
 = 1.0.7 =
 
