@@ -1,3 +1,5 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/b74d5aea109e451f9a0f1ded460e9064)](https://www.codacy.com/app/CityPay/citypay-paylink-woo-commerce?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=citypay/citypay-paylink-woo-commerce&amp;utm_campaign=Badge_Grade)
+
 CityPay Paylink WooCommerce Plugin
 ==================================
 
