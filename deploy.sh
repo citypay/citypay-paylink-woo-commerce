@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# File is used to deploy from a git source location to Wordpress SVN
+# Run ./deploy.sh on the latest branch that is ready for deployment
+# and ensure tags are correct on src/readme.txt and ./readme.md.
+# The script will check for them
+
 # file creates credentials for deploying to wp
 source .wp-credentials.conf
 echo $USER
@@ -42,7 +47,7 @@ echo "Exporting git HEAD of master to SVN trunk..."
 # Delete existing files to capture deleted files.
 find $SVNPATH/trunk/ -type f -exec rm '{}' ';'
 # Export current files.
-cp $PLUGINPATH/* $SVNPATH/trunk/
+cp -R $PLUGINPATH/* $SVNPATH/trunk/
 cp $PLUGINPATH/assets/* $SVNPATH/assets/
 
 echo
