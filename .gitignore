@@ -5,3 +5,4 @@
 /lib
 .env
 /wp-release/
+.wp-credentials.conf
