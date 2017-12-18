@@ -8,20 +8,24 @@ License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 CityPay Paylink WooCommerce is a plugin that supplements WooCommerce with
-support for payment processing using CityPay hosted payment forms.
+support for payment processing using CityPay hosted payment forms and Paylink 3.
 
 == Description ==
+
+
+The WooCommerce plugin works by creating a token and redirecting to the
+Paylink form for card holders to enter their card details directly into
+the CityPay secure web application. Once a payment has been completed it
+will attempt to connect via a webhook or postback to your web site.
 
 == Installation ==
 
 = Minimum requirements =
 
-* PHP version 5.2.4 or greater with libcurl support
+* PHP version 5.2.4 or greater
 * MySQL version 5.0 or greater
-* libcurl version 7.10.5 or later with SSL / TLS support
-* openssl, to current patch levels
 * WordPress 4.0 or greater
-* WooCommerce 2.3 or greater
+* WooCommerce 3 or greater
 
 = Automatic installation =
 
@@ -44,10 +48,15 @@ Install Now.
 
 Once the plugin has been installed, you may need to activate it by selecting
 the Plugins menu, clicking Installed Plugins and then activating the plugin
-with the name "CityPay WooCommerce Payments" by clicking on the link labeled
+with the name "CityPay WooCommerce Plugin" by clicking on the link labeled
 Activate.
 
-The merchant account, the license key, the transaction currency and other
+You will need to edit WooCommerce checkout settings by navigating to the
+WooCommerce administration panel, selecting WooCommerce, Settings and then
+the checkout tab. If installed correctly, you should see CityPay as a link
+under the Checkout Options.
+
+The merchant account, the licence key, the transaction currency and other
 information relating to the processing of transactions through the CityPay
 Paylink hosted form payment gateway may be configured by selecting the
 plugin configuration form which is accessed indirectly through the
@@ -57,12 +66,24 @@ methods.
 
 You can include the WooCommerce order identifier in the description sent
 to CityPay for the purpose of including a customer-friendly reference in
-the email sent to the customer on conclusion of the transaction. This is
+the email sent to the customer. This is
 achieved by specifying {order_id} as part of the descriptive text appearing
 in the text box labeled Transaction Description.
 
 After the settings for the plugin have been configured, they must be saved
 by clicking on the button labeled Save Changes before they take effect.
+
+= Developer Postback Testing =
+
+The Paylink service cannot send a postback/webhook to your localhost test server
+to update the order status. Therefore token requests fail to be created when
+a localhost or local network address is detected in the postback URL. To work
+around this, we recommend using [https://ngrok.com](https://ngrok.com) to create
+a secure tunnel to your localhost server. As your WordPress installation may be
+on localhost, the CityPay settings page allows the addition of a
+**Postback Site Address (URL)** which you can customise with your ngrok address i.e.
+https://12345678abc.ngrok.io. The value should be the host and protocol part of the
+URL.
 
 = Processing test transactions =
 
@@ -89,63 +110,16 @@ Paylink service.
 
 The location of the log file is provided on the plugin settings form.
 
-== Frequently Asked Questions ==
-
-= WordPress / WooCommerce displays "Sorry, unable to process your order at this time" at the time of checkout =
-
-WordPress / WooCommerce displays the generic error "Sorry, unable to process
-your order at this time" if is not possible for the application to refer the
-customer to the CityPay Paylink hosted payment form.
-
-There may be a variety of reasons that such a referral cannot be made. If
-connection failure is persistent, then this may be caused by -
-
-1. incorrect configuration of the merchant identifier (the "MID") or the licence
-key used by the plugin to obtain a payment session token from the Paylink
-service; or
-2. incorrect configuration of the IP address registered with CityPay for
-receiving API calls from merchant applications to the CityPay Paylink service
-API.
-
-The specific cause of the problem can be determined by enabling debug logging
-for the plugin and, after attempting to process a transaction, checking the
-debug log.
-
-Configuration of the MID, or the licence key for the installed version of 
-WordPress / WooCommerce and the CityPay Paylink plugin is performed through
-the WooCommerce settings forms; whereas configuration of the IP address
-for the merchant application registered with CityPay is administered by
-CityPay. To request configuration of the IP address for the merchant application
-please contact <support@citypay.com>.
-
-If the connection failure is not persistent, and intermittent in nature, the
-problem is most likely caused by connectivity or DNS name resolution problems
-affecting the merchant application generally.
-
-= CityPay Paylink service connectivity issues involving WordPress / WooCommerce implementations =
-
-The CityPay Paylink WooCommerce plugin relies upon being able to establish
-a secure, encrypted session with the CityPay Paylink service. The OpenSSL
-library typically installed with Windows binary versions of PHP is not
-accompanied by any certificate authority ("CA") certificates that exist to
-certify, through a chain of certificates, the identity of the remote endpoint;
-in the present case, the CityPay Paylink service. The problem may affect binary
-distributions of PHP for other operating systems as well.
-
-With debug logging enabled in the plugin settings, a problem involving access
-to SSL CA certificates may be indicated by a line of the form -
-
-    SSL certificate problem: unable to get local issuer certificate
-
-To resolve this problem, the CA bundle may be downloaded from
-<https://raw.githubusercontent.com/bagder/ca-bundle/master/ca-bundle.crt>,
-installed in an appropriate location, and referenced in the php.ini
-configuration file for PHP using the curl.cainfo configuration setting.
-
-== Screenshots ==
-
 
 == Changelog ==
+
+= 2.0.0 =
+
+* Refactored library to be fully 3.0 compatible and remove support for 2.X of WooCommerce.
+* Addition of postback URL testing for use with Ngrok or similar
+* Refactoring of method of payment to ensure linkage to the Paylink form is seamless
+* Prevented multiple postback calls from reverting the status of an approved authorisation
+* addition of further notes to the order screen
 
 = 1.1.0 =
 
