@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# file creates credentials for deploying to wp
+source .wp-credentials.conf
+echo $USER
 PLUGINPATH=src
 MAINFILE=wc-payment-gateway-citypay.php
 PROJECT=citypay-payments
@@ -61,14 +64,14 @@ echo -e "Ready to publish release to SVN? (Y/n) [n] \c"
 read CONFIRMED
 [[ $CONFIRMED == "Y" ]] || { echo "Aborted."; exit 1; }
 
-svn commit -m "Preparing release $VERSION."
+svn commit --username "$USER" --password "$PASS" -m "Preparing release $VERSION."
 
 echo
 echo "Creating and committing SVN tag..."
 popd > /dev/null
 svn copy trunk tags/$VERSION
 pushd tags/$VERSION > /dev/null
-svn commit -m "Tagging release $VERSION."
+svn commit  --username "$USER" --password "$PASS" -m "Tagging release $VERSION."
 popd > /dev/null
 
 echo "Done."
