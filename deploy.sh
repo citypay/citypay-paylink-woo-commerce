@@ -43,6 +43,7 @@ echo "Exporting git HEAD of master to SVN trunk..."
 find $SVNPATH/trunk/ -type f -exec rm '{}' ';'
 # Export current files.
 cp $PLUGINPATH/* $SVNPATH/trunk/
+cp $PLUGINPATH/assets/* $SVNPATH/assets/
 
 echo
 echo "Exporting to SVN..."
