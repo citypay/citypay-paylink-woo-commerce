@@ -3,8 +3,8 @@ services:
     wpdatabase:
         container_name: wpdatabasedocker-compos
         image: mysql:5.7
-        ports:
-                - "127.0.0.1:3306:3306"
+        #        ports:
+        #        - "127.0.0.1:3306:3306"
         volumes:
                 - ./db:/var/lib/mysql
         environment:
@@ -27,8 +27,8 @@ services:
         env_file: .env
         networks:
                 - wordpressnet
-#        volumes:
-#          - ./src:/var/www/html/wp-content/plugins/citypay-paylink-woocommerce
+        volumes:
+          - ./src:/var/www/html/wp-content/plugins/citypay-paylink-woocommerce
 networks:
     wordpressnet:
             driver: bridge
