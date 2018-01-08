@@ -287,7 +287,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
             $this->warningLog('Digest mismatch');
             throw new Exception('Digest mismatch');
         }
-        $this->infoLog('Postback data is valid, digest match');
+        $this->infoLog('Postback data is valid, digest matched "' . $check . '"');
         return true;    // Hash values match expected value
     }
 
@@ -304,6 +304,8 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
                 $order_key = sanitize_text_field($pl_orderkey);
                 $order_id = sanitize_text_field($pl_orderid);
                 $order = wc_get_order($order_id);
+
+                $this->debugLog('Current order status: ' . $order->status);
 
                 // Check order not already completed
                 // Most of the time this should mark an order as 'processing' so that admin can process/post the items.
@@ -324,6 +326,8 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
                     throw new Exception('No http post data');
                 }
 
+                $this->debugLog($HTTP_RAW_POST_DATA);
+
                 $postback_data = array_change_key_case(json_decode($HTTP_RAW_POST_DATA, true), CASE_LOWER);
                 if (is_null($postback_data)) {
                     $this->errorLog('No postback data');
@@ -333,19 +337,22 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
                 $this->validatePostbackDigest($postback_data);
 
 
-                // Postback has been recieved and validated, update order details
+                // Postback has been received and validated, update order details
                 $postback_data = stripslashes_deep($postback_data);
                 $trans_no = $postback_data['transno'];
                 $authcode = $postback_data['authcode'];
-                $result = $postback_data['authorised'];
+                $authorised = $postback_data['authorised'];
+                $b_authorised = is_string($authorised) ? strtolower($authorised) == 'true' : $authorised;
                 $expmonth = str_pad($postback_data['expmonth'], 2, '0', STR_PAD_LEFT);
                 $is_test = $postback_data['mode'] == 'test';
 
-                $this->debugLog('Found order #' . $order->get_id());
-                $this->debugLog('Trans No ' . $trans_no);
-                $this->debugLog('Status ' . $order->status);
+                $this->debugLog('Found order:      #' . $order->get_id());
+                $this->debugLog('order status:     ' . $order->status);
+                $this->debugLog('Authorised:       ' . ($b_authorised ? 'true' : 'false'));
+                $this->debugLog('Incoming transNo: ' . $trans_no);
 
-                if ((is_string($result) && strtolower($result) === 'true') || $result) {
+
+                if ($b_authorised) {
 
                     // Transaction authorised
                     update_post_meta($order->get_id(), 'CityPay TransNo', $trans_no);
@@ -365,10 +372,9 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
                 // Declined/Cancelled
                 $this->debugLog('Declined');
                 $this->debugLog('Not authorised: ' . $postback_data['errorid'] . ' ' . $postback_data['errormessage']);
-                $order->update_status('failed',
-                    sprintf(__('CityPay Postback Payment Not Authorised, TransNo: %s. Result: %s Error: %s: %s.', 'wc-payment-gateway-citypay'),
-                        $trans_no, $postback_data['result'], $postback_data['errorid'], $postback_data['errormessage'])
-                );
+                $order->add_order_note(sprintf(__('CityPay Postback Payment Not Authorised, TransNo: %s. Result: %s Error: %s: %s.', 'wc-payment-gateway-citypay'),
+                    $trans_no, $postback_data['result'], $postback_data['errorid'], $postback_data['errormessage']));
+                $order->update_status('failed');
 
             }
 
