@@ -13,7 +13,7 @@ services:
         networks:
                 - wordpressnet
     wordpress:
-        image: citypay/woocommerce:dev
+        image: citypay/woocommerce:latest
         ports:
                 - 127.0.0.1:80:80
                 - 127.0.0.1:4040:4040
