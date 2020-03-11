@@ -3,7 +3,7 @@
 CityPay Paylink WooCommerce Plugin
 ==================================
 
-![WooCommerce Logo](src/assets/logo-x250.png)
+![WooCommerce Logo](https://citypay.com/static/img/logo-x500.png)
 
 ![WooCommerce Logo](assets/woocommerce.png) 
 
