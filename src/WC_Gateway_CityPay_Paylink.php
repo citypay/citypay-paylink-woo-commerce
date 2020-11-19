@@ -39,7 +39,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
 
         $this->enabled = $this->get_option('enabled');
         $this->debug = $this->get_option('debug');
-        $this->icon = plugin_dir_url(__FILE__) . 'assets/logo-x500-greyscale.png';
+        $this->icon = plugin_dir_url(__FILE__) . 'assets/logo-x500.png';
         $this->testmode = $this->get_option('testmode');
         $this->has_fields = false;    // No additional fields in checkout page
         $this->log = new WC_Logger();

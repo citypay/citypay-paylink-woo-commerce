@@ -12,6 +12,7 @@ License URI: http://www.gnu.org/licenses/gpl-3.0.en.html
 
 */
 
+require_once('/var/www/html/wp-admin/includes/plugin.php' );
 
 if (!defined('ABSPATH')) {
     exit;
