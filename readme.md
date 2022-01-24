@@ -20,8 +20,8 @@ will attempt to connect via a webhook or postback to your web site.
 
 * PHP version 5.2.4 or greater 
 * MySQL version 5.0 or greater
-* WordPress 4.0 or greater
-* WooCommerce 3 or greater
+* WordPress 4.0 or greater (Tested up to: 5.9)
+* WooCommerce 3 or greater (Tested up to: 6.1.1)
 
 ## Automatic Installation
 
