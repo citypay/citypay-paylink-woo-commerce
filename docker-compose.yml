@@ -13,7 +13,7 @@ services:
         networks:
                 - wordpressnet
     wordpress:
-        image: citypay/woocommerce:dev
+        image: citypay/woocommerce:latest
         ports:
                 - 127.0.0.1:80:80
                 - 127.0.0.1:4040:4040
@@ -21,7 +21,7 @@ services:
                WORDPRESS_DB_HOST: wpdatabase
                WORDPRESS_DB_NAME: wordpress
                WORDPRESS_DB_USER: root
-               CITYPAY_PLUGIN_VERSION: 1.1.0
+               CITYPAY_PLUGIN_VERSION: 2.0.1
         depends_on:
                 - wpdatabase
         env_file: .env
