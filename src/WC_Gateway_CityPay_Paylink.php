@@ -180,7 +180,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
             'subscriptions_prefix' => array(
                 'title' => __('Subscriptions Prefix', 'wc-payment-gateway-citypay'),
                 'type' => 'text',
-                'description' => __('Enter a Subscription Prefix that will be used to link the subscription and card holder account.', 'wc-payment-gateway-citypay'),
+                'description' => __('Enter a Subscription Prefix for this store. If you have others stores using the same Client ID, use a different prefix for each. (maxLength: 8)', 'wc-payment-gateway-citypay'),
                 'default' => '',
                 'placeholder' => 'Subscriptions Prefix'
             ),
@@ -266,11 +266,16 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
 
             // add fields option and accountNo in PayLink token request to create cardholder account
             $this->debugLog("wcs_order_contains_subscription order id:" . $order_id . " " . wcs_order_contains_subscription($order_id));
+
             if (wcs_order_contains_subscription($order_id) && $this->is_subscriptions_enabled()) {
                 $subscriptions = wcs_get_subscriptions_for_order($order_id);
-                $subscription_id = array_values($subscriptions)[0]->get_id();  // we are assuming that we just accept one subscription in the order
-                $order->add_order_note('Added fields to create card holder account. Subscription ID:' . $subscription_id);
-                $accountNo = $this->subscriptions_prefix . '-' . $subscription_id;
+                $subscription = array_values($subscriptions)[0]; // Single subscription in the order.
+                $subscription_id = $subscription->get_id();
+                $order->add_order_note('Added fields to create card holder account. Subscription ID: ' . $subscription_id);
+                $accountNo = $this->subscriptions_prefix . $order->get_customer_id() . bin2hex(random_bytes(16)); //account Max Length is 50. subscriptions_prefix 8, customer_id 10, random_bytes 32
+                update_post_meta($subscription_id, 'AccountNo', $accountNo);
+                $subscription->add_order_note('Subscription AccountNo: ' . $accountNo);
+                $this->paylink->addSubscriptionId($subscription_id);
                 $this->paylink->setOptionsAndAccountNo($accountNo);
             }
 

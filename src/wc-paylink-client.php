@@ -99,6 +99,10 @@ class CityPay_PayLink
         $this->base_call['accountNo'] = $accountNo;
     }
 
+    public function addSubscriptionId($subscription_id) {
+        $this->base_call['subscriptionId'] = $subscription_id;
+    }
+
     public function setRequestConfig($testmode, $postback_url, $return_success_url, $return_failure_url)
     {
         $this->request_config = array(

@@ -62,10 +62,10 @@ trait WC_Gateway_CP_Subscriptions
             $this->debugLog('scheduled_subscription_payment subscription_id:' . $subscription_id );
 
             $merchant_id = $this->get_merchant_id();
+            $accountNo = get_post_meta($subscription_id, 'AccountNo', true);
+            $account = $this->account_retrieval($accountNo);
 
-            $account = $this->account_retrieval($this->subscriptions_prefix  . '-' . $subscription_id);
-
-            $token = array_values($account['CardHolderAccount']['cards'])[0]['token']; // TODO
+            $token = array_values($account['CardHolderAccount']['cards'])[0]['token'];
 
             $charge_body = [
                 "amount" => $amount_to_charge,
@@ -80,7 +80,7 @@ trait WC_Gateway_CP_Subscriptions
 
             $response = $this->account_charge($charge_body);
 
-            $response_auth_response = $response['AuthResponse']; // TODO if not AuthResponse error
+            $response_auth_response = $response['AuthResponse'];
 
             $this->validateChargeResponseData($response_auth_response);
 
