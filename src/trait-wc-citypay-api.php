@@ -79,6 +79,7 @@ trait WC_CP_API {
         $body = [
             "amount" => $charge['amount'],
             "identifier" => $charge['identifier'],
+            "subscription_id" => $charge['subscription_id'],
             "merchantid" => $charge['merchantid'],
             "token" => $charge['token'],
             "currency" => $charge['currency'],
