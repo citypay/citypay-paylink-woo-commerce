@@ -99,6 +99,11 @@ class CityPay_PayLink
         $this->base_call['accountNo'] = $accountNo;
     }
 
+    /**
+     * Adds subscriptionId
+     * @param $subscription_id
+     * @return void
+     */
     public function addSubscriptionId($subscription_id) {
         $this->base_call['subscriptionId'] = $subscription_id;
     }
