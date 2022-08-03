@@ -1,5 +1,3 @@
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/b74d5aea109e451f9a0f1ded460e9064)](https://www.codacy.com/app/CityPay/citypay-paylink-woo-commerce?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=citypay/citypay-paylink-woo-commerce&amp;utm_campaign=Badge_Grade)
-
 CityPay Paylink WooCommerce Plugin
 ==================================
 
@@ -16,12 +14,12 @@ Paylink form for card holders to enter their card details directly into
 the CityPay secure web application. Once a payment has been completed it
 will attempt to connect via a webhook or postback to your web site.  
 
-## Minimum requirements
+## Minimum requirements 
 
-* PHP version 5.2.4 or greater 
+* PHP version 5.2.4 or greater (Tested up to: 7.4)
 * MySQL version 5.0 or greater
-* WordPress 4.0 or greater (Tested up to: 5.9)
-* WooCommerce 3 or greater (Tested up to: 6.1.1)
+* WordPress 4.0 or greater (Tested up to: 6.0.1)
+* WooCommerce 3 or greater (Tested up to: 6.7.0)
 
 ## Automatic Installation
 
@@ -83,8 +81,6 @@ on localhost, the CityPay settings page allows the addition of a
 https://12345678abc.ngrok.io. The value should be the host and protocol part of the 
 URL.
  
-
- 
 ### Processing test transactions
 
 To test the operation of an e-commerce solution based on WooCommerce in
@@ -134,8 +130,8 @@ CityPay have created a `Dockerfile` which can be used to test WooCommerce and th
 CityPay plugin. 
 
 The docker file is based on 
-1. wordpress 4.9
-2. php 7.1 running apache
+1. wordpress 6.0.1
+2. php 7.4 running apache
 
 The docker instance will run ngrok for postback testing and expose port 80 for web 
 inspection.
@@ -154,5 +150,9 @@ WORDPRESS_DB_PASSWORD=********
 MYSQL_ROOT_PASSWORD=******** <-- should be the same as WORDPRESS_DB_PASSWORD 
 NGROK_AUTHTOKEN=...your authtoken for ngrok
 ```
+
+# WooCommerce Subscriptions
+
+* [WooCommerce Subscriptions Documentation](src/wc-subscriptions.md)
 
  

@@ -2,8 +2,8 @@
 Contributors: citypay
 Tags: ecommerce, e-commerce, woocommerce, payment gateway
 Requires at least: 4.0
-Tested up to: 5.9
-Stable tag: 2.0.1
+Tested up to: 6.0.1
+Stable tag: 2.0.2
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,10 +22,10 @@ will attempt to connect via a webhook or postback to your web site.
 
 = Minimum requirements =
 
-* PHP version 5.2.4 or greater
+* PHP version 5.2.4 or greater (Tested up to: 7.4)
 * MySQL version 5.0 or greater
-* WordPress 4.0 or greater
-* WooCommerce 3 or greater
+* WordPress 4.0 or greater (Tested up to: 6.0.1)
+* WooCommerce 3 or greater (Tested up to: 6.7.0)
 
 = Automatic installation =
 
@@ -112,6 +112,16 @@ The location of the log file is provided on the plugin settings form.
 
 
 == Changelog ==
+
+= 2.0.2 =
+
+* Integrated WooCommerce Subscriptions.
+
+= 2.0.1 =
+
+* Fixed issue where cancelled transactions could result in marking an order as complete.
+* Fixed issue where retrying cancelled transactions results in order notes being missed
+
 
 = 2.0.0 =
 

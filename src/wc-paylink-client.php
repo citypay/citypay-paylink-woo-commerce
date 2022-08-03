@@ -29,6 +29,7 @@ class CityPay_PayLink
         $this->pay_module = $args[0];
     }
 
+
     private function debugLog($text)
     {
         if (method_exists($this->pay_module, 'debugLog')) {
@@ -85,7 +86,26 @@ class CityPay_PayLink
 
     public function setRequestClient($client_version)
     {
-        $this->request_client = array('clientVersion' => 'wc-' . wc()->version . '-citypay/' . trim($client_version));
+        $this->request_client = array('clientVersion' => 'WooCommerce-' . wc()->version . '/CityPay-WC-' . $client_version);
+    }
+
+    /**
+     * Sets option CREATE_CAC_ACCOUNT_ON_AUTHORISATION and accountNo for the token creation
+     * @param $accountNo
+     * @return void
+     */
+    public function setOptionsAndAccountNo($accountNo) {
+        $this->request_config['config']['options'] = ['CREATE_CAC_ACCOUNT_ON_AUTHORISATION'];
+        $this->base_call['accountNo'] = $accountNo;
+    }
+
+    /**
+     * Adds subscriptionId
+     * @param $subscription_id
+     * @return void
+     */
+    public function addSubscriptionId($subscription_id) {
+        $this->base_call['subscriptionId'] = $subscription_id;
     }
 
     public function setRequestConfig($testmode, $postback_url, $return_success_url, $return_failure_url)
@@ -114,7 +134,7 @@ class CityPay_PayLink
     }
 
     /**
-     * Creates a token with the remote end point and returns a url if cleanly generated
+     * Creates a token with the remote end point and returns an url if cleanly generated
      * @throws Exception should a non 200 be returned or invalid data be found
      */
     public function createPaylinkToken()

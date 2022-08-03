@@ -6,11 +6,13 @@ if (!defined('ABSPATH')) {
 
 require_once(dirname(__FILE__) . '/WC_Gateway_CityPay.php');
 require_once(dirname(__FILE__) . '/wc-paylink-client.php');
+require_once dirname(__FILE__) . '/trait-wc-gateway-cp-subscriptions.php';
 
 /** @noinspection PhpUndefinedClassInspection */
+
 class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
 {
-
+    use WC_Gateway_CP_Subscriptions;
     public $id;
     public $title;
     public $icon;
@@ -18,6 +20,9 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
     public $method_title;
     public $merchant_curr;
     public $merchant_id;
+    public $cp_subscriptions;
+    public $subs_merchant_id;
+    public $client_id;
     public $licence_key;
     public $version;
     public $cart_desc;
@@ -33,8 +38,8 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
         parent::__construct();
 
         $this->id = 'citypay';
-        $context = get_file_data(__DIR__ . '/wc-payment-gateway-citypay.php', []);
-        $this->version = $context['Version'];
+        $context = get_file_data(__DIR__ . '/wc-payment-gateway-citypay.php', ['version' => 'Version']);
+        $this->version = $context['version'];
 
 
         $this->enabled = $this->get_option('enabled');
@@ -45,16 +50,22 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
         $this->log = new WC_Logger();
         $this->method_title = __('CityPay', 'wc-payment-gateway-citypay');
         $this->method_description = __('Accept payments using CityPay Paylink', 'wc-payment-gateway-citypay');
-//        $this->supports = array('products');
+
+        $this->supports = array(
+            'products',
+        );
 
         $this->init_form_fields();
         $this->init_settings();
-
 
         $this->title = $this->get_option('title');
         $this->description = $this->get_option('description');
         $this->merchant_curr = $this->get_option('merchant_curr');
         $this->merchant_id = $this->get_option('merchant_id');
+        $this->cp_subscriptions = $this->get_option('cp_subscriptions');
+        $this->subs_merchant_id = $this->get_option('subs_merchant_id');
+        $this->client_id = $this->get_option('client_id');
+        $this->subscriptions_prefix = $this->get_option('subscriptions_prefix');
         $this->cart_desc = $this->get_option('cart_desc');
         $this->licence_key = $this->get_option('licence_key');
 
@@ -63,16 +74,16 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
         $postback_base = $this->get_option('postback_base');
         $this->postback_url = trailingslashit($postback_base) . 'wc-api/citypay-postback';
 
+        $this->init_subscriptions();
+
         // Actions
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
         add_action('woocommerce_api_citypay-postback', array($this, 'check_postback'));
-//        add_action('valid-citypay-postback', array($this, 'successful_request'));
+        // add_action('valid-citypay-postback', array($this, 'successful_request'));
         add_action('woocommerce_receipt_' . $this->id, array($this, 'receipt_page'));
 
         // Add hook for postbacks
         add_action('init', array($this, 'check_postback'));
-
-
     }
 
 
@@ -80,7 +91,6 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
     {
         include_once('admin_options.php');
     }
-
 
     function init_form_fields()
     {
@@ -113,7 +123,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
                 'description' => __('Enter your CityPay Merchant ID.', 'wc-payment-gateway-citypay'),
                 'default' => '',
                 'desc_tip' => true,
-                'placeholder' => '[MerchantID]'
+                'placeholder' => 'Merchant ID'
             ),
             'licence_key' => array(
                 'title' => __('Licence Key', 'wc-payment-gateway-citypay'),
@@ -121,7 +131,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
                 'description' => __('Enter your CityPay PayLink licence key.', 'wc-payment-gateway-citypay'),
                 'default' => '',
                 'desc_tip' => true,
-                'placeholder' => '[LicenceKey]'
+                'placeholder' => 'Licence Key'
             ),
             'merchant_curr' => array(
                 'title' => __('Merchant Currency', 'wc-payment-gateway-citypay'),
@@ -149,6 +159,42 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
                 'description' => __('Enter the base postback URL if different. This value can centralise multiple stores or allow development to use remote reverse proxies for postback testing.', 'wc-payment-gateway-citypay'),
                 'default' => get_site_url()
             ),
+            'subscriptions' => array(
+                'title' => __( 'Subscriptions', 'viva-wallet-for-woocommerce' ),
+                'type' => 'title',
+            ),
+            'cp_subscriptions' => array(
+                'title' => __('Subscriptions Enable/Disable', 'wc-payment-gateway-citypay'),
+                'type' => 'checkbox',
+                'label' => __('Enable Subscriptions', 'wc-payment-gateway-citypay'),
+                'default' => 'no',
+                'description' => __('Allows the plugin to accept subscriptions from the Woocommerce Subscription Plugin.'),
+            ),
+            'client_id' => array(
+                'title' => __('Client ID', 'wc-payment-gateway-citypay'),
+                'type' => 'text',
+                'description' => __('Enter your CityPay Client ID to be able to process subscriptions.', 'wc-payment-gateway-citypay'),
+                'default' => '',
+                'placeholder' => 'Client ID'
+            ),
+            'subscriptions_prefix' => array(
+                'title' => __('Subscriptions Prefix', 'wc-payment-gateway-citypay'),
+                'type' => 'text',
+                'description' => __('Enter a Subscription Prefix for this store. If you have others stores using the same Client ID, use a different prefix for each. (maxLength: 8)', 'wc-payment-gateway-citypay'),
+                'default' => '',
+                'placeholder' => 'Subscriptions Prefix'
+            ),
+            'subs_merchant_id' => array(
+                'title' => __('Subscriptions Merchant ID', 'wc-payment-gateway-citypay'),
+                'type' => 'text',
+                'description' => __('Enter your CityPay Subscriptions Merchant ID. (If empty the MerchantID will be used).', 'wc-payment-gateway-citypay'),
+                'default' => '',
+                'placeholder' => 'Subscriptions Merchant ID'
+            ),
+            'test' => array(
+                'title' => __( 'Test', 'viva-wallet-for-woocommerce' ),
+                'type' => 'title',
+            ),
             'testmode' => array(
                 'title' => __('Test Mode', 'wc-payment-gateway-citypay'),
                 'type' => 'checkbox',
@@ -165,9 +211,6 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
             )
         );
     }
-
-    //function validate_licence_key_field($key);
-
 
     /**
      * Generates a CityPay Paylink 3 URL by constructing a JSON call to CityPay and returning a response object
@@ -221,6 +264,21 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
                 $order->get_cancel_order_url()
             );
 
+            // add fields option and accountNo in PayLink token request to create cardholder account
+            if ($this->is_subscriptions_enabled()) {
+                if (wcs_order_contains_subscription($order_id)) {
+                    $subscriptions = wcs_get_subscriptions_for_order($order_id);
+                    $subscription = array_values($subscriptions)[0]; // Single subscription in the order.
+                    $subscription_id = $subscription->get_id();
+                    $order->add_order_note('Added fields to create card holder account. Subscription ID: ' . $subscription_id);
+                    $accountNo = $this->subscriptions_prefix . $order->get_customer_id() . bin2hex(random_bytes(16)); //account Max Length is 50. subscriptions_prefix 8, customer_id 10, random_bytes 32
+                    update_post_meta($subscription_id, 'AccountNo', $accountNo);
+                    $subscription->add_order_note('Subscription AccountNo: ' . $accountNo);
+                    $this->paylink->addSubscriptionId($subscription_id);
+                    $this->paylink->setOptionsAndAccountNo($accountNo);
+                }
+            }
+
             $paylinkToken = $this->paylink->createPaylinkToken();
             $order->add_order_note("CityPay Paylink Token: " . $paylinkToken['id']);
             update_post_meta($order->get_id(), 'CityPay Paylink Token', $paylinkToken['id']);
@@ -232,8 +290,6 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
             $this->errorLog('Error generating PayLink URL: ' . $e);
             throw new Exception($message);
         }
-
-
     }
 
     function is_currency_supported()
@@ -291,6 +347,45 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
         return true;    // Hash values match expected value
     }
 
+    /**
+     * Validates digest from charge (renewal) response
+     * @param $chargeResponseData
+     * @return bool
+     * @throws Exception
+     */
+    public function validateChargeResponseData($chargeResponseData)
+    {
+        $this->debugLog('validateChargeResponseData()');
+        $hash_src = $chargeResponseData['authcode'] .
+            $chargeResponseData['amount'] .
+            $chargeResponseData['result_code'] .
+            $chargeResponseData['merchantid'] .
+            $chargeResponseData['transno'] .
+            $chargeResponseData['identifier'] .
+            $this->licence_key;
+        // Check both the sha256 hash values to ensure that results have not
+        // been tampered with
+        $check = base64_encode(hash('sha256', $hash_src, true));
+        if (strcmp($chargeResponseData['sha256'], $check) != 0) {
+            $this->warningLog('Digest mismatch');
+            throw new Exception('Digest mismatch');
+        }
+        $this->infoLog('Charge response data is valid, digest matched "' . $check . '"');
+        return true;    // Hash values match expected value
+    }
+
+    /**
+     * Returns the merchantID to process renewals
+     * @return mixed Merchant ID
+     */
+    function get_merchant_id() {
+        $subs_merchant_id = $this->subs_merchant_id;
+
+        if ($this->is_subscriptions_enabled() && $this->cp_subscriptions && !empty($subs_merchant_id)) {
+            return $this->subs_merchant_id;
+        }
+        return $this->merchant_id;
+    }
 
     function check_postback()
     {
