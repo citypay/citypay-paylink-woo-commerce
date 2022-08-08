@@ -153,6 +153,6 @@ NGROK_AUTHTOKEN=...your authtoken for ngrok
 
 # WooCommerce Subscriptions
 
-* [WooCommerce Subscriptions Documentation](src/wc-subscriptions.md)
+* [CityPay WooCommerce Subscriptions Documentation](src/wc-subscriptions.md)
 
  

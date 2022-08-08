@@ -9,10 +9,10 @@ Allows you to sell products and services with recurring payments using [CityPay 
 * MySQL version 5.0 or greater
 * WordPress 6.0.1 or greater
 * WooCommerce 6.7.0 or greater
-* WooCommerce Subscriptions 4.4.0
+* WooCommerce Subscriptions 4.4.0 or greater
 * Cron [Working WP Cron](https://woocommerce.com/document/subscriptions/requirements/#section-2)
 * Site URL [Live site served exclusively on one URL](https://woocommerce.com/document/subscriptions-handles-staging-sites/#section-11)
-* [CityPay Paylink WooCommerce Plugin 2.0.2](https://github.com/citypay/citypay-paylink-woo-commerce)
+* [CityPay Paylink WooCommerce Plugin 2.0.3](https://github.com/citypay/citypay-paylink-woo-commerce)
 
 ## Set up 
 
