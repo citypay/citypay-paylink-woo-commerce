@@ -52,7 +52,6 @@ trait WC_Gateway_CP_Subscriptions
     public function scheduled_subscription_payment($amount_to_charge, $renewal_order)
     {
         try {
-
             $this->debugLog('WC_Gateway_CP_Subscriptions::scheduled_subscription_payment()');
 
             $renewal_order_id = $renewal_order->get_id();
@@ -65,60 +64,66 @@ trait WC_Gateway_CP_Subscriptions
             $accountNo = get_post_meta($subscription_id, 'AccountNo', true);
             $account = $this->account_retrieval($accountNo);
 
-            $token = array_values($account['CardHolderAccount']['cards'])[0]['token'];
+            $token = array_values($account['cards'])[0]['token'];
 
-            $charge_body = [
-                "amount" => $amount_to_charge,
-                "identifier" => "renewal-" . $merchant_id . $subscription_id . $renewal_order_id,
-                "subscription_id" => $subscription_id,
-                "merchantid" => (int) $merchant_id ,
-                "token" => $token,
-                "currency" => $this->merchant_curr,
-                "initiation" => "M", // Merchant
-                "cardholder_agreement" => "R", // Recurring
-                "csc_policy" => "2" // to ignore. Transactions that are ignored will bypass the result and not send the CSC details for authorisation.
-            ];
+            if ($token) {
+                $this->debugLog('Has token');
+                $charge_body = [
+                    "amount" => $amount_to_charge,
+                    "identifier" => "renewal-" . $merchant_id . $subscription_id . $renewal_order_id,
+                    "subscription_id" => $subscription_id,
+                    "merchantid" => (int)$merchant_id,
+                    "token" => $token,
+                    "currency" => $this->merchant_curr,
+                    "initiation" => "M", // Merchant
+                    "cardholder_agreement" => "R", // Recurring
+                    "csc_policy" => "2" // to ignore. Transactions that are ignored will bypass the result and not send the CSC details for authorisation.
+                ];
 
-            $response = $this->account_charge($charge_body);
+                $response = $this->account_charge($charge_body);
 
-            $response_auth_response = $response['AuthResponse'];
+                $response_auth_response = $response['AuthResponse'];
 
-            $this->validateChargeResponseData($response_auth_response);
+                $this->validateChargeResponseData($response_auth_response);
 
-            $trans_no = $response_auth_response['transno'];
-            $authcode = $response_auth_response['authcode'];
-            $authorised = $response_auth_response['authorised'];
-            $live= $response_auth_response['live'];
+                $trans_no = $response_auth_response['transno'];
+                $authcode = $response_auth_response['authcode'];
+                $authorised = $response_auth_response['authorised'];
+                $live = $response_auth_response['live'];
 
-            $this->debugLog('Found order:      #' . $renewal_order->get_id());
-            $this->debugLog('order status:     ' . $renewal_order->status);
-            $this->debugLog('Authorised:       ' . ($authorised ? 'true' : 'false'));
-            $this->debugLog('Incoming transNo: ' . $trans_no);
+                $this->debugLog('Found order:      #' . $renewal_order->get_id());
+                $this->debugLog('order status:     ' . $renewal_order->status);
+                $this->debugLog('Authorised:       ' . ($authorised ? 'true' : 'false'));
+                $this->debugLog('Incoming transNo: ' . $trans_no);
 
 
-            if ($authorised) {
+                if ($authorised) {
 
-                // Transaction authorised
-                update_post_meta($renewal_order->get_id(), 'CityPay TransNo', $trans_no);
-                update_post_meta($renewal_order->get_id(), 'CityPay Identifier', $response_auth_response['identifier']);
-                $maskedpan = $response_auth_response['scheme'] . '/' . $response_auth_response['maskedpan'];
-                update_post_meta($renewal_order->get_id(), 'Card used', $maskedpan);
+                    // Transaction authorised
+                    update_post_meta($renewal_order->get_id(), 'CityPay TransNo', $trans_no);
+                    update_post_meta($renewal_order->get_id(), 'CityPay Identifier', $response_auth_response['identifier']);
+                    $maskedpan = $response_auth_response['scheme'] . '/' . $response_auth_response['maskedpan'];
+                    update_post_meta($renewal_order->get_id(), 'Card used', $maskedpan);
 
-                $renewal_order->add_order_note(sprintf(__('%s CityPay Renewal Payment OK. TransNo: %s, AuthCode: %s',
-                    'wc-payment-gateway-citypay'), $live ? "" : "Test", $trans_no, $authcode));
+                    $renewal_order->add_order_note(sprintf(__('%s CityPay Renewal Payment OK. TransNo: %s, AuthCode: %s',
+                        'wc-payment-gateway-citypay'), $live ? "" : "Test", $trans_no, $authcode));
 
-                $renewal_order->payment_complete();
-                $this->debugLog('Authorised, Payment complete.');
-                return;
+                    $renewal_order->payment_complete();
+                    $this->debugLog('Authorised, Payment complete.');
+                    return;
+                }
+
+                // Declined/Cancelled
+                $this->debugLog('Declined');
+                $this->debugLog('Not authorised: ' . $response_auth_response['result_code'] . ' ' . $response_auth_response['result_message']);
+                $renewal_order->add_order_note(sprintf(__('CityPay Renewal Payment Not Authorised, TransNo: %s. Result: %s Error: %s: %s.', 'wc-payment-gateway-citypay'),
+                    $trans_no, $response_auth_response['result'], $response_auth_response['result_code'], $response_auth_response['result_message']));
+
+            } else {
+                $this->debugLog('No token');
+                $renewal_order->add_order_note("Something went wrong. Renewal Failed.");
             }
-
-            // Declined/Cancelled
-            $this->debugLog('Declined');
-            $this->debugLog('Not authorised: ' . $response_auth_response['result_code'] . ' ' . $response_auth_response['result_message']);
-            $renewal_order->add_order_note(sprintf(__('CityPay Renewal Payment Not Authorised, TransNo: %s. Result: %s Error: %s: %s.', 'wc-payment-gateway-citypay'),
-                $trans_no, $response_auth_response['result'], $response_auth_response['result_code'], $response_auth_response['result_message']));
             $renewal_order->update_status('failed');
-
         } catch (Exception $e) {
             $message = $e->getMessage();
             $renewal_order->add_order_note($e->getMessage());
