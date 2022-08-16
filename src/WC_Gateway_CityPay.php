@@ -42,6 +42,9 @@ class WC_Gateway_CityPay extends WC_Payment_Gateway
         $this->log->warning($text, array('source' => $this->id));
     }
 
+    function formatedAmount($amount) {
+        return (int)number_format((float)$amount, 2, '', '');
+    }
 }
 
 
