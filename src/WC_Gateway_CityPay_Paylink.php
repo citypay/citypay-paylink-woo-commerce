@@ -241,7 +241,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
                 $this->merchant_id,
                 $this->licence_key,
                 $cart_id,
-                (int)number_format((float)$order->get_total(), 2, '', ''),
+                $this->formatedAmount($order->get_total()),
                 get_woocommerce_currency(),
                 $cart_desc
             );
@@ -319,16 +319,31 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
         );
     }
 
+    /**
+     * // Check both the sha256 hash values to ensure that results have not been tampered
+     * @param $hash_src
+     * @param $sha256Response
+     * @return bool
+     * @throws Exception
+     */
+    public function checkSha256($hash_src, $sha256Response) {
+        $check = base64_encode(hash('sha256', $hash_src, true));
+        if (strcmp($sha256Response, $check) != 0) {
+            $this->warningLog('Digest mismatch');
+            throw new Exception('Digest mismatch');
+        }
+        $this->infoLog('Data is valid, digest matched "' . $check . '"');
+        return true;    // Hash values match expected value
+    }
 
     /**
      * @param $postback_data
-     * @return bool
+     * @return void
      * @throws Exception
      */
     public function validatePostbackDigest($postback_data)
     {
         $this->debugLog('validatePostbackData()');
-        $this->debugLog($postback_data);
         $hash_src = $postback_data['authcode'] .
             $postback_data['amount'] .
             $postback_data['errorcode'] .
@@ -336,21 +351,14 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
             $postback_data['transno'] .
             $postback_data['identifier'] .
             $this->licence_key;
-        // Check both the sha256 hash values to ensure that results have not
-        // been tampered with
-        $check = base64_encode(hash('sha256', $hash_src, true));
-        if (strcmp($postback_data['sha256'], $check) != 0) {
-            $this->warningLog('Digest mismatch');
-            throw new Exception('Digest mismatch');
-        }
-        $this->infoLog('Postback data is valid, digest matched "' . $check . '"');
-        return true;    // Hash values match expected value
+
+        $this->checkSha256($hash_src, $postback_data['sha256']);
     }
 
     /**
      * Validates digest from charge (renewal) response
      * @param $chargeResponseData
-     * @return bool
+     * @return void
      * @throws Exception
      */
     public function validateChargeResponseData($chargeResponseData)
@@ -363,15 +371,8 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
             $chargeResponseData['transno'] .
             $chargeResponseData['identifier'] .
             $this->licence_key;
-        // Check both the sha256 hash values to ensure that results have not
-        // been tampered with
-        $check = base64_encode(hash('sha256', $hash_src, true));
-        if (strcmp($chargeResponseData['sha256'], $check) != 0) {
-            $this->warningLog('Digest mismatch');
-            throw new Exception('Digest mismatch');
-        }
-        $this->infoLog('Charge response data is valid, digest matched "' . $check . '"');
-        return true;    // Hash values match expected value
+
+        $this->checkSha256($hash_src, $chargeResponseData['sha256']);
     }
 
     /**

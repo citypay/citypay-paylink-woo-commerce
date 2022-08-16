@@ -69,7 +69,7 @@ trait WC_Gateway_CP_Subscriptions
             if ($token) {
                 $this->debugLog('Has token');
                 $charge_body = [
-                    "amount" => $amount_to_charge,
+                    "amount" => $this->formatedAmount($amount_to_charge),
                     "identifier" => "renewal-" . $merchant_id . $subscription_id . $renewal_order_id,
                     "subscription_id" => $subscription_id,
                     "merchantid" => (int)$merchant_id,
