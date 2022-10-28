@@ -10,16 +10,16 @@ CityPay Paylink WooCommerce is a plugin that supplements WooCommerce with
 support for payment processing using CityPay hosted payment forms and Paylink 3.
 
 The WooCommerce plugin works by creating a token and redirecting to the
-Paylink form for card holders to enter their card details directly into
+Paylink form for cardholders to enter their card details directly into
 the CityPay secure web application. Once a payment has been completed it
 will attempt to connect via a webhook or postback to your web site.  
 
 ## Minimum requirements 
 
-* PHP version 5.2.4 or greater (Tested up to: 7.4)
+* PHP version 5.2.4 or greater (Tested up to: 8.1.11)
 * MySQL version 5.0 or greater
-* WordPress 4.0 or greater (Tested up to: 6.0.1)
-* WooCommerce 3 or greater (Tested up to: 6.7.0)
+* WordPress 4.0 or greater (Tested up to: 6.1)
+* WooCommerce 3 or greater (Tested up to: 7.0)
 
 ## Automatic Installation
 
