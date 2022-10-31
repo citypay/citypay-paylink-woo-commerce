@@ -4,7 +4,7 @@
 Plugin Name: CityPay WooCommerce Plugin
 Plugin URI: https://github.com/citypay/citypay-paylink-woo-commerce
 Description: Accept CityPay payments on your WooCommerce powered store!
-Version: 2.0.6
+Version: 2.0.7
 Author: CityPay Limited
 Author URI: https://citypay.com
 License: GPLv3

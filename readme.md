@@ -130,7 +130,7 @@ CityPay have created a `Dockerfile` which can be used to test WooCommerce and th
 CityPay plugin. 
 
 The docker file is based on 
-1. wordpress 6.0.1
+1. WordPress 6.0.1
 2. php 7.4 running apache
 
 The docker instance will run ngrok for postback testing and expose port 80 for web 
