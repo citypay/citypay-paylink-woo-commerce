@@ -2,8 +2,8 @@
 Contributors: citypay
 Tags: ecommerce, e-commerce, woocommerce, payment gateway
 Requires at least: 4.0
-Tested up to: 6.0.1
-Stable tag: 2.0.6
+Tested up to: 6.1
+Stable tag: 2.0.7
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -14,9 +14,9 @@ support for payment processing using CityPay hosted payment forms and Paylink 3.
 
 
 The WooCommerce plugin works by creating a token and redirecting to the
-Paylink form for card holders to enter their card details directly into
+Paylink form for cardholders to enter their card details directly into
 the CityPay secure web application. Once a payment has been completed it
-will attempt to connect via a webhook or postback to your web site.
+will attempt to connect via a webhook or postback to your website.
 
 == Installation ==
 
@@ -95,7 +95,7 @@ labeled Test Mode appearing on the plugin settings form should be ticked.
 = Processing live transactions =
 
 To process live transactions for settlement by the upstream acquirer, the
-check box labeled Test Mode referenced in the paragraph above must be
+checkbox labeled Test Mode referenced in the paragraph above must be
 unticked.
 
 = Enabling logging =
@@ -112,6 +112,10 @@ The location of the log file is provided on the plugin settings form.
 
 
 == Changelog ==
+
+= 2.0.7 =
+
+* Updated tested up to for WordPress.
 
 = 2.0.6 =
 
