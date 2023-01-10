@@ -4,7 +4,7 @@ mkdir -p citypay-paylink-woocommerce
 cp -R src/* citypay-paylink-woocommerce/
 cp readme.* citypay-paylink-woocommerce/
 
-VERSION=$(awk '/Version: /{print $NF}' src/citypay-paylink-woocommerce.php)
+VERSION=$(awk '/Version: /{print $NF}' src/wc-payment-gateway-citypay.php)
 echo $VERSION
 
 zip -r citypay-paylink-woocommerce-$VERSION.zip citypay-paylink-woocommerce \
