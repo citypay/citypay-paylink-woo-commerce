@@ -26,6 +26,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
     public $licence_key;
     public $version;
     public $cart_desc;
+    public $t_ident_prefix;
 
     /**
      * @var CityPay_PayLink paylink object
@@ -67,6 +68,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
         $this->client_id = $this->get_option('client_id');
         $this->subscriptions_prefix = $this->get_option('subscriptions_prefix');
         $this->cart_desc = $this->get_option('cart_desc');
+        $this->t_ident_prefix = $this->get_option('t_ident_prefix');
         $this->licence_key = $this->get_option('licence_key');
 
         $this->form_submission_method = true;
@@ -153,6 +155,12 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
                 'default' => __('Your order from StoreName', 'wc-payment-gateway-citypay'),
                 'desc_tip' => true,
             ),
+            't_ident_prefix' => array(
+                'title' => __('Transaction identifier prefix', 'wc-payment-gateway-citypay'),
+                'type' => 'text',
+                'description' => __('A Identifier identifies a particular transaction linked to a Merchant account (Length 5-50 characters). The OrderID will be concatenated to the prefix. Introduce a prefix at least with 4 characters.', 'wc-payment-gateway-citypay'),
+                'default' => __('OrderID#', 'wc-payment-gateway-citypay'),
+            ),
             'postback_base' => array(
                 'title' => __('Postback Site Address (URL)', 'wc-payment-gateway-citypay'),
                 'type' => 'url',
@@ -231,7 +239,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
 
             $order_num = ltrim($order->get_order_number(), '#');
             $order_key = $order->get_order_key();
-            $cart_id = 'OrderID#' . $order_id;
+            $cart_id = $this->t_ident_prefix . $order_id;
             $cart_desc = trim($this->cart_desc);
             if (empty($cart_desc)) {
                 $cart_desc = 'Order ' . $order_num;
