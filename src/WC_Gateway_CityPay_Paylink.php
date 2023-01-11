@@ -158,7 +158,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
             't_ident_prefix' => array(
                 'title' => __('Transaction identifier prefix', 'wc-payment-gateway-citypay'),
                 'type' => 'text',
-                'description' => __('A Identifier identifies a particular transaction linked to a Merchant account.', 'wc-payment-gateway-citypay'),
+                'description' => __('A Identifier identifies a particular transaction linked to a Merchant account (Length 5-50 characters). Introduce a prefix at least with 4 characters', 'wc-payment-gateway-citypay'),
                 'default' => __('OrderID#', 'wc-payment-gateway-citypay'),
                 'desc_tip' => true,
             ),
