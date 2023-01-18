@@ -12,7 +12,7 @@ trait WC_CP_API {
     public function get_api_host() {
         $test_mode = $this->get_option('testmode');
 
-        if ($test_mode) {
+        if ($test_mode == 'yes') {
             return CITYPAY_API_TEST_ROOT;
         } else return CITYPAY_API_ROOT;
     }
