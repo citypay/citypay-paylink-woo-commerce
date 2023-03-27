@@ -1,4 +1,4 @@
-FROM wordpress:6.0.1-php7.4-apache
+FROM wordpress:beta-6.2-RC4-php8.2-apache
 LABEL maintainer="Gary Feltham <gary.feltham@citypay.com>"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -18,8 +18,8 @@ RUN curl -O https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-386.zip \
     && unzip ngrok-stable-linux-386.zip \
     && cp ngrok /usr/bin/ngrok
 
-ENV WOOCOMMERCE_VERSION 7.0
-ENV CITYPAY_PLUGIN_VERSION 2.0.9
+ENV WOOCOMMERCE_VERSION 7.5.1
+ENV CITYPAY_PLUGIN_VERSION 2.1.0
 
 COPY scripts/*.sh /usr/local/bin/
 
