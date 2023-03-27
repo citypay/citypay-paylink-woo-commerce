@@ -36,16 +36,19 @@ if [[ -z "${NGROK_AUTHTOKEN}" ]]; then
 else
   ngrok authtoken $NGROK_AUTHTOKEN
   echo "web_addr: 0.0.0.0:4040" >>./ngrok.conf
-  nohup ngrok http -log=ngrok.log -region=eu --config=ngrok.conf 80 &
+  nohup ngrok http 80 &
 fi
 
 sleep 4
-NGROK_URL=$(curl http://127.0.0.1:4040/api/tunnels | jq '.tunnels[].public_url'  | grep http:)
+NGROK_URL=$(curl http://127.0.0.1:4040/api/tunnels | jq '.tunnels[].public_url'  | grep https:)
 NGROK_URL=$(sed -e 's/^"//' -e 's/"$//' <<<"$NGROK_URL")
 
 echo 'ngrokurl=' $NGROK_URL
 echo ============================================
 
+# replace store url with NGROK URL
+sed -i "s|define('WP_HOME', '.*');|define('WP_HOME', '"$NGROK_URL"/');|" wp-config.php
+sed -i "s|define('WP_SITEURL', '.*');|define('WP_SITEURL', '"$NGROK_URL"/');|" wp-config.php
 
 # run apache in the foreground...
 apache2-foreground
