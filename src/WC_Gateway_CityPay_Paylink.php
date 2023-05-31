@@ -18,7 +18,6 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
     public $icon;
     public $has_fields = false;
     public $method_title;
-    public $merchant_curr;
     public $merchant_id;
     public $cp_subscriptions;
     public $subs_merchant_id;
@@ -61,7 +60,6 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
 
         $this->title = $this->get_option('title');
         $this->description = $this->get_option('description');
-        $this->merchant_curr = $this->get_option('merchant_curr');
         $this->merchant_id = $this->get_option('merchant_id');
         $this->cp_subscriptions = $this->get_option('cp_subscriptions');
         $this->subs_merchant_id = $this->get_option('subs_merchant_id');
@@ -134,19 +132,6 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
                 'default' => '',
                 'desc_tip' => true,
                 'placeholder' => 'Licence Key'
-            ),
-            'merchant_curr' => array(
-                'title' => __('Merchant Currency', 'wc-payment-gateway-citypay'),
-                'type' => 'select',
-                'description' => __('Enter the currency code for your CityPay merchant account.', 'wc-payment-gateway-citypay'),
-                'default' => 'GBP',
-                'desc_tip' => true,
-                'options' => array(
-                    'GBP' => "&pound; GBP",
-                    'USD' => "$ USD",
-                    'EUR' => "&euro; EUR",
-                    'AUD' => "$ AUD"
-                )
             ),
             'cart_desc' => array(
                 'title' => __('Transaction description', 'wc-payment-gateway-citypay'),
@@ -231,6 +216,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
         try {
 
             $order = wc_get_order($order_id);
+            $this->debugLog('order currency' . $order->get_currency());
             $this->debugLog('get_request_url(' . $order_id . ')');
 
             if (is_null($this->paylink)) {
@@ -250,7 +236,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
                 $this->licence_key,
                 $cart_id,
                 $this->formatedAmount($order->get_total()),
-                get_woocommerce_currency(),
+                $order->get_currency(),
                 $cart_desc
             );
             $this->paylink->setRequestClient($this->version);
@@ -300,11 +286,6 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
         }
     }
 
-    function is_currency_supported()
-    {
-        return in_array(get_woocommerce_currency(), array('GBP', 'USD', 'EUR', 'AUD'));
-    }
-
     /**
      * @param int $order_id
      * @return array
@@ -312,11 +293,6 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
      */
     function process_payment($order_id)
     {
-        // Process the payment and return the result
-        if (!$this->is_currency_supported()) {
-            throw new Exception(__('You cannot use this currency with CityPay.', 'wc-payment-gateway-citypay'));
-        }
-
         $this->debugLog("process_payment(" . $order_id . ')');
         $paylinkUrl = $this->generate_paylink_url($order_id);
 

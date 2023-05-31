@@ -50,7 +50,7 @@ WooCommerce administration panel, selecting WooCommerce, Settings and then
 the checkout tab. If installed correctly, you should see CityPay as a link
 under the Checkout Options.
 
-The merchant account, the licence key, the transaction currency and other
+The merchant account, the licence key and other
 information relating to the processing of transactions through the CityPay
 Paylink hosted form payment gateway may be configured by selecting the
 plugin configuration form which is accessed indirectly through the

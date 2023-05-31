@@ -53,6 +53,7 @@ trait WC_Gateway_CP_Subscriptions
     {
         try {
             $this->debugLog('WC_Gateway_CP_Subscriptions::scheduled_subscription_payment()');
+            $this->debugLog('renewall order currency' . $renewal_order->get_currency());
 
             $renewal_order_id = $renewal_order->get_id();
             $subscriptions =  wcs_get_subscriptions_for_renewal_order($renewal_order_id);
@@ -74,7 +75,7 @@ trait WC_Gateway_CP_Subscriptions
                     "subscription_id" => $subscription_id,
                     "merchantid" => (int)$merchant_id,
                     "token" => $token,
-                    "currency" => $this->merchant_curr,
+                    "currency" => $renewal_order->get_currency(),
                     "initiation" => "M", // Merchant
                     "cardholder_agreement" => "R", // Recurring
                     "csc_policy" => "2" // to ignore. Transactions that are ignored will bypass the result and not send the CSC details for authorisation.

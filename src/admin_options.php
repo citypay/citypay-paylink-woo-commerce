@@ -5,7 +5,7 @@ $subs_configured_note = false;
 $subs_prefix_note = false;
 $subs_prefix_max_len = 8;
 
-if ((empty($this->merchant_curr)) || (empty($this->merchant_id)) || (empty($this->licence_key))) {
+if ((empty($this->merchant_id)) || (empty($this->licence_key))) {
     $configured = false;
 }
 
