@@ -284,6 +284,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
                     $subscription->add_order_note('Subscription AccountNo: ' . $accountNo);
                     $this->paylink->addSubscriptionId($subscription_id);
                     $this->paylink->setOptionsAndAccountNo($accountNo);
+                    $this->paylink->setRecurring(true);
                 }
             }
 

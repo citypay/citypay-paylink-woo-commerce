@@ -108,6 +108,15 @@ class CityPay_PayLink
         $this->base_call['subscriptionId'] = $subscription_id;
     }
 
+    /**
+     * Adds recurring field
+     * @param $value
+     * @return void
+     */
+    public function setRecurring($value) {
+        $this->base_call['recurring'] = $value;
+    }
+
     public function setRequestConfig($testmode, $postback_url, $return_success_url, $return_failure_url)
     {
         $this->request_config = array(
