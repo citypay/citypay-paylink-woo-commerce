@@ -18,8 +18,8 @@ RUN curl -O https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-386.zip \
     && unzip ngrok-stable-linux-386.zip \
     && cp ngrok /usr/bin/ngrok
 
-ENV WOOCOMMERCE_VERSION 7.5.1
-ENV CITYPAY_PLUGIN_VERSION 2.1.1
+ENV WOOCOMMERCE_VERSION 7.9.0
+ENV CITYPAY_PLUGIN_VERSION 2.1.2
 
 COPY scripts/*.sh /usr/local/bin/
 
