@@ -2,8 +2,8 @@
 Contributors: citypay
 Tags: ecommerce, e-commerce, woocommerce, payment gateway
 Requires at least: 4.0
-Tested up to: 6.2.2
-Stable tag: 2.1.2
+Tested up to: 6.4.2
+Stable tag: 2.1.3
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,8 +24,8 @@ will attempt to connect via a webhook or postback to your website.
 
 * PHP version 5.2.4 or greater (Tested up to: 8.2.4)
 * MySQL version 5.0 or greater
-* WordPress 4.0 or greater (Tested up to: 6.2.2)
-* WooCommerce 3 or greater (Tested up to: 7.9.0)
+* WordPress 4.0 or greater (Tested up to: 6.4.2)
+* WooCommerce 3 or greater (Tested up to: 8.4.0)
 
 = Automatic installation =
 
@@ -112,6 +112,11 @@ The location of the log file is provided on the plugin settings form.
 
 
 == Changelog ==
+
+= 2.1.3 =
+
+* Removed lockParams cardholder.
+* Fixed City not showing in Paylink form.
 
 = 2.1.2 =
 
