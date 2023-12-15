@@ -123,7 +123,6 @@ class CityPay_PayLink
             //'test'		=> 'simulator',
             'test' => $testmode ? 'true' : 'false',
             'config' => array(
-                'lockParams' => array('cardholder'),
                 'redirect_success' => $return_success_url,
                 'redirect_failure' => $return_failure_url)
         );
@@ -154,13 +153,18 @@ class CityPay_PayLink
         $url = CITYPAY_PAYLINK_API_ROOT . '/create';
         $this->debugLog('POST data to ' . $url . ' with data /\n' . $json);
 
+        $context = get_file_data(__DIR__ . '/wc-payment-gateway-citypay.php', ['version' => 'Version']);
+
+        $user_agent = 'WooCommerce-' . wc()->version . '/CityPay-WC-' . $context['version'];
+
         $response = wp_remote_post($url, array(
             'method' => 'POST',
             'timeout' => 45,
             'headers' => array(
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json;charset=UTF-8',
-                'Content-Length' => strlen($json)
+                'Content-Length' => strlen($json),
+                'User-Agent' => $user_agent
             ),
             'body' => $json
         ));
