@@ -48,7 +48,7 @@ class CityPay_PayLink
      * @param $country string
      * @param $email string
      */
-    public function setCardHolder($firstName, $lastName, $address1, $address2, $address3, $area, $postcode, $country, $email)
+    public function setCardHolder($firstName, $lastName, $address1, $address2, $city, $state, $postcode, $country, $email)
     {
         $this->request_addr = array(
             'cardholder' => array(
@@ -58,8 +58,8 @@ class CityPay_PayLink
                 'address' => array(
                     'address1' => trim($address1),
                     'address2' => trim($address2),
-                    'address3' => trim($address3),
-                    'area' => trim($area),
+                    'address3' => trim($state),
+                    'area' => trim($city),
                     'postcode' => trim($postcode),
                     'country' => trim(strtoupper($country)))));
     }
