@@ -48,7 +48,7 @@ class CityPay_PayLink
      * @param $country string
      * @param $email string
      */
-    public function setCardHolder($firstName, $lastName, $address1, $address2, $address3, $area, $postcode, $country, $email)
+    public function setCardHolder($firstName, $lastName, $address1, $address2, $city, $state, $postcode, $country, $email)
     {
         $this->request_addr = array(
             'cardholder' => array(
@@ -58,8 +58,8 @@ class CityPay_PayLink
                 'address' => array(
                     'address1' => trim($address1),
                     'address2' => trim($address2),
-                    'address3' => trim($address3),
-                    'area' => trim($area),
+                    'address3' => trim($state),
+                    'area' => trim($city),
                     'postcode' => trim($postcode),
                     'country' => trim(strtoupper($country)))));
     }
@@ -123,7 +123,6 @@ class CityPay_PayLink
             //'test'		=> 'simulator',
             'test' => $testmode ? 'true' : 'false',
             'config' => array(
-                'lockParams' => array('cardholder'),
                 'redirect_success' => $return_success_url,
                 'redirect_failure' => $return_failure_url)
         );
@@ -154,13 +153,18 @@ class CityPay_PayLink
         $url = CITYPAY_PAYLINK_API_ROOT . '/create';
         $this->debugLog('POST data to ' . $url . ' with data /\n' . $json);
 
+        $context = get_file_data(__DIR__ . '/wc-payment-gateway-citypay.php', ['version' => 'Version']);
+
+        $user_agent = 'WooCommerce-' . wc()->version . '/CityPay-WC-' . $context['version'];
+
         $response = wp_remote_post($url, array(
             'method' => 'POST',
             'timeout' => 45,
             'headers' => array(
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json;charset=UTF-8',
-                'Content-Length' => strlen($json)
+                'Content-Length' => strlen($json),
+                'User-Agent' => $user_agent
             ),
             'body' => $json
         ));
