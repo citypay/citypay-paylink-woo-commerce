@@ -479,8 +479,14 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
                 $this->debugLog('Not authorised: ' . $postback_data['errorid'] . ' ' . $postback_data['errormessage']);
                 $order->add_order_note(sprintf(__('CityPay Postback Payment Not Authorised, TransNo: %s. Result: %s Error: %s: %s.', 'wc-payment-gateway-citypay'),
                     $trans_no, $postback_data['result'], $postback_data['errorid'], $postback_data['errormessage']));
-                $order->update_status('failed');
 
+                $cp_cancelled_result = 19;
+                //TO REVIEW as the cancelled status cancel the order and when we go to the checkout to pay creates a new order, instead of using the previous.
+                if($postback_data['result'] === $cp_cancelled_result) {
+                    $order->update_status('cancelled');
+                } else {
+                    $order->update_status('failed');
+                }
             }
 
             header('HTTP/1.1 200 OK');
