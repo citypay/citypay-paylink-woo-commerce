@@ -21,7 +21,7 @@ services:
                WORDPRESS_DB_HOST: wpdatabase
                WORDPRESS_DB_NAME: wordpress
                WORDPRESS_DB_USER: root
-               CITYPAY_PLUGIN_VERSION: 2.1.3
+               CITYPAY_PLUGIN_VERSION: 2.1.4
         depends_on:
                 - wpdatabase
         env_file: .env
