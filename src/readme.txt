@@ -2,13 +2,12 @@
 Contributors: citypay
 Tags: ecommerce, e-commerce, woocommerce, payment gateway
 Requires at least: 4.0
-Tested up to: 6.4.2
-Stable tag: 2.1.3
+Tested up to: 6.8
+Stable tag: 2.1.4
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-CityPay Paylink WooCommerce is a plugin that supplements WooCommerce with
-support for payment processing using CityPay hosted payment forms and Paylink 3.
+CityPay Paylink WooCommerce adds payment processing support to WooCommerce using CityPay hosted forms.
 
 == Description ==
 
@@ -24,8 +23,8 @@ will attempt to connect via a webhook or postback to your website.
 
 * PHP version 5.2.4 or greater (Tested up to: 8.2.4)
 * MySQL version 5.0 or greater
-* WordPress 4.0 or greater (Tested up to: 6.4.2)
-* WooCommerce 3 or greater (Tested up to: 8.4.0)
+* WordPress 4.0 or greater (Tested up to: 6.8.2)
+* WooCommerce 3 or greater (Tested up to: 10.0.2)
 
 = Automatic installation =
 
@@ -112,6 +111,10 @@ The location of the log file is provided on the plugin settings form.
 
 
 == Changelog ==
+
+= 2.1.4 =
+
+* Updated "tested up to" for WordPress and WooCommerce.
 
 = 2.1.3 =
 

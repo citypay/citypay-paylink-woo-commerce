@@ -16,8 +16,8 @@ will attempt to connect via a webhook or postback to your web site.
 
 * PHP version 5.2.4 or greater (Tested up to: 8.2.4)
 * MySQL version 5.0 or greater
-* WordPress 4.0 or greater (Tested up to: 6.4.2)
-* WooCommerce 3 or greater (Tested up to: 8.4.0)
+* WordPress 4.0 or greater (Tested up to: 6.8.2)
+* WooCommerce 3 or greater (Tested up to: 10.0.2)
 
 ## Automatic Installation
 
