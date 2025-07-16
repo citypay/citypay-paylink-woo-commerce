@@ -14,9 +14,10 @@ RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli
 	&& wp --info
 
 # Install ngrok to monitor for postbacks
-RUN curl -O https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-386.zip \
-    && unzip ngrok-stable-linux-386.zip \
-    && cp ngrok /usr/bin/ngrok
+RUN curl -Lo ngrok.zip https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-386.zip \
+    && unzip ngrok.zip \
+    && cp ngrok /usr/bin/ngrok \
+    && rm ngrok.zip
 
 ENV WOOCOMMERCE_VERSION 9.3.3
 ENV CITYPAY_PLUGIN_VERSION 2.1.4
