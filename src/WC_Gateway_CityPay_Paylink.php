@@ -45,7 +45,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
 
         $this->enabled = $this->get_option('enabled');
         $this->debug = $this->get_option('debug');
-        $this->icon = plugin_dir_url(__FILE__) . 'assets/logo-x500.png';
+        $this->icon = plugin_dir_url(__FILE__) . 'assets/citypay-logo100.png';
         $this->testmode = $this->get_option('testmode');
         $this->has_fields = false;    // No additional fields in checkout page
         $this->log = new WC_Logger();
@@ -109,7 +109,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
                 'title' => __('Title', 'wc-payment-gateway-citypay'),
                 'type' => 'text',
                 'description' => __('This controls the payment method title which the user sees during checkout.', 'wc-payment-gateway-citypay'),
-                'default' => __('Credit/Debit card', 'wc-payment-gateway-citypay'),
+                'default' => __('', 'wc-payment-gateway-citypay'),
                 'desc_tip' => true,
             ),
             'description' => array(
