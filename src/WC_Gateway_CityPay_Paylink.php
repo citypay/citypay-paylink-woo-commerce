@@ -109,7 +109,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay
                 'title' => __('Title', 'wc-payment-gateway-citypay'),
                 'type' => 'text',
                 'description' => __('This controls the payment method title which the user sees during checkout.', 'wc-payment-gateway-citypay'),
-                'default' => __('', 'wc-payment-gateway-citypay'),
+                'default' => __('Credit/Debit card', 'wc-payment-gateway-citypay'),
                 'desc_tip' => true,
             ),
             'description' => array(
