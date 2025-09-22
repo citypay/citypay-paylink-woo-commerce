@@ -112,6 +112,7 @@ The location of the log file is provided on the plugin settings form.
 
 == Changelog ==
 
+= 2.1.9 Add payment functionality for CityPay to Block Editor. Add Test button to WooCommerce Payments CityPay tab to check all settings required for the plugin to connect and work with CityPay, it also checks that a valid connection can be made to the CityPay servers. Added metabox to the order screen providing details about the CityPay payment. Added extra columns to the Orders list page in relation to the payment.
 = 2.1.6 =
 
 * Changed logo.
