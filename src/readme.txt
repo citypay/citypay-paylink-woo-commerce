@@ -2,7 +2,7 @@
 Contributors: citypay
 Tags: ecommerce, e-commerce, woocommerce, payment gateway
 Requires at least: 4.0
-Tested up to: 6.8
+Tested up to: 6.9
 Stable tag: 2.1.9
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -23,7 +23,7 @@ will attempt to connect via a webhook or postback to your website.
 
 * PHP version 5.2.4 or greater (Tested up to: 8.2.4)
 * MySQL version 5.0 or greater
-* WordPress 4.0 or greater (Tested up to: 6.8.2)
+* WordPress 4.0 or greater (Tested up to: 6.9.1)
 * WooCommerce 3 or greater (Tested up to: 10.0.2)
 
 = Automatic installation =

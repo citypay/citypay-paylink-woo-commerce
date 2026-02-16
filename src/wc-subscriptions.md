@@ -7,7 +7,7 @@ Allows you to sell products and services with recurring payments using [CityPay 
 
 * PHP version 7.4 or greater (Tested up to: 8.2.4)
 * MySQL version 5.0 or greater 
-* WordPress 6.0.1 or greater (Tested up to: 6.8.2)
+* WordPress 6.0.1 or greater (Tested up to: 6.9.1)
 * WooCommerce 6.7.0 or greater (Tested up to: 10.0.2)
 * WooCommerce Subscriptions 4.4.0 or greater (Tested up to: 5.0.1)
 * Cron [Working WP Cron](https://woocommerce.com/document/subscriptions/requirements/#section-2)
