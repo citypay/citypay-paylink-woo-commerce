@@ -216,19 +216,19 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 				'title'   => __( 'Visa', 'wc-payment-gateway-citypay' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Show Visa logo at checkout', 'wc-payment-gateway-citypay' ),
-				'default' => 'yes',
+				'default' => 'no',
 			),
 			'show_mastercard_logo' => array(
 				'title'   => __( 'Mastercard', 'wc-payment-gateway-citypay' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Show Mastercard logo at checkout', 'wc-payment-gateway-citypay' ),
-				'default' => 'yes',
+				'default' => 'no',
 			),
 			'show_maestro_logo' => array(
 				'title'   => __( 'Maestro', 'wc-payment-gateway-citypay' ),
 				'type'    => 'checkbox',
 				'label'   => __( 'Show Maestro logo at checkout', 'wc-payment-gateway-citypay' ),
-				'default' => 'yes',
+				'default' => 'no',
 			),
 			'show_visa_electron_logo' => array(
 				'title'   => __( 'Visa Electron', 'wc-payment-gateway-citypay' ),
@@ -308,9 +308,9 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 
 		$base = plugin_dir_url( __FILE__ ) . 'assets/cards/';
 
-		if ( $this->get_option( 'show_visa_logo', 'yes' ) === 'yes' )         { $icons[] = sprintf( '<img src="%s" alt="Visa" style="height:24px; margin-right:6px;" />', esc_url( $base . 'cs-logo-vs-50h.png' ) ); }
-		if ( $this->get_option( 'show_mastercard_logo', 'yes' ) === 'yes' )   { $icons[] = sprintf( '<img src="%s" alt="Mastercard" style="height:24px; margin-right:6px;" />', esc_url( $base . 'cs-logo-mc-50h.png' ) ); }
-		if ( $this->get_option( 'show_maestro_logo', 'yes' ) === 'yes' )      { $icons[] = sprintf( '<img src="%s" alt="Maestro" style="height:24px; margin-right:6px;" />', esc_url( $base . 'cs-logo-ma-50h.png' ) ); }
+		if ( $this->get_option( 'show_visa_logo', 'no' ) === 'yes' )         { $icons[] = sprintf( '<img src="%s" alt="Visa" style="height:24px; margin-right:6px;" />', esc_url( $base . 'cs-logo-vs-50h.png' ) ); }
+		if ( $this->get_option( 'show_mastercard_logo', 'no' ) === 'yes' )   { $icons[] = sprintf( '<img src="%s" alt="Mastercard" style="height:24px; margin-right:6px;" />', esc_url( $base . 'cs-logo-mc-50h.png' ) ); }
+		if ( $this->get_option( 'show_maestro_logo', 'no' ) === 'yes' )      { $icons[] = sprintf( '<img src="%s" alt="Maestro" style="height:24px; margin-right:6px;" />', esc_url( $base . 'cs-logo-ma-50h.png' ) ); }
 		if ( $this->get_option( 'show_visa_electron_logo', 'no' ) === 'yes' ) { $icons[] = sprintf( '<img src="%s" alt="Visa Electron" style="height:24px; margin-right:6px;" />', esc_url( $base . 'cs-logo-ve-50h.png' ) ); }
 		if ( $this->get_option( 'show_amex_logo', 'no' ) === 'yes' )          { $icons[] = sprintf( '<img src="%s" alt="American Express" style="height:24px; margin-right:6px;" />', esc_url( $base . 'cs-logo-am-50h.png' ) ); }
 		if ( $this->get_option( 'show_diners_club_logo', 'no' ) === 'yes' )   { $icons[] = sprintf( '<img src="%s" alt="Diners Club" style="height:24px; margin-right:6px;" />', esc_url( $base . 'cs-logo-dn-50h.png' ) ); }
@@ -465,27 +465,50 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 	 */
 	public function check_postback() {
 		try {
+			$this->debugLog( 'check_postback invoked. method=' . ( $_SERVER['REQUEST_METHOD'] ?? '' ) . ' uri=' . ( $_SERVER['REQUEST_URI'] ?? '' ) );
+
 			$pl_orderkey = isset( $_GET['pl_orderkey'] ) ? sanitize_text_field( wp_unslash( $_GET['pl_orderkey'] ) ) : null;
 			$pl_orderid  = isset( $_GET['order_id'] ) ? sanitize_text_field( wp_unslash( $_GET['order_id'] ) ) : null;
 
-			if ( ! $pl_orderkey || ! $pl_orderid ) { return; }
+			if ( ! $pl_orderkey || ! $pl_orderid ) {
+				$this->debugLog( 'check_postback skipped: missing pl_orderkey or order_id' );
+				return;
+			}
 			@ob_clean();
+			$this->debugLog( 'check_postback params: order_id=' . $pl_orderid . ', pl_orderkey_present=' . ( $pl_orderkey ? 'yes' : 'no' ) );
 
 			$order = wc_get_order( $pl_orderid );
-			if ( ! $order ) { header( 'HTTP/1.1 200 OK' ); return; }
+			if ( ! $order ) {
+				$this->errorLog( 'check_postback: order not found for order_id=' . $pl_orderid );
+				header( 'HTTP/1.1 200 OK' );
+				return;
+			}
+
+			$this->debugLog( 'check_postback found order #' . $order->get_id() . ' status=' . $order->get_status() );
 
 			if ( in_array( $order->get_status(), array( 'processing', 'completed' ), true ) ) {
+				$this->debugLog( 'check_postback skipped: order already complete-ish status=' . $order->get_status() );
 				header( 'HTTP/1.1 200 OK' );
 				return;
 			}
 
 			$raw = file_get_contents( 'php://input' );
+			$this->debugLog(
+				'check_postback input meta: content_type=' . ( $_SERVER['CONTENT_TYPE'] ?? '' ) .
+				', content_length=' . ( $_SERVER['CONTENT_LENGTH'] ?? '' ) .
+				', raw_len=' . strlen( (string) $raw )
+			);
 			if ( empty( $raw ) ) { throw new Exception( 'No http post data' ); }
 
 			$postback_data = array_change_key_case( json_decode( $raw, true ), CASE_LOWER );
-			if ( is_null( $postback_data ) ) { throw new Exception( 'No postback data' ); }
+			if ( is_null( $postback_data ) ) {
+				$this->errorLog( 'check_postback json decode failed: ' . json_last_error_msg() . '; raw_head=' . substr( (string) $raw, 0, 300 ) );
+				throw new Exception( 'No postback data' );
+			}
+			$this->debugLog( 'check_postback keys: ' . implode( ',', array_keys( $postback_data ) ) );
 
 			$this->validatePostbackDigest( $postback_data );
+			$this->debugLog( 'check_postback digest validation passed for order #' . $order->get_id() );
 
 			$trans_no     = $postback_data['transno'] ?? '';
 			$authcode     = $postback_data['authcode'] ?? '';
@@ -493,8 +516,19 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 			$b_authorised = is_string( $authorised ) ? strtolower( $authorised ) === 'true' : (bool) $authorised;
 			$expmonth     = isset( $postback_data['expmonth'] ) ? str_pad( $postback_data['expmonth'], 2, '0', STR_PAD_LEFT ) : '';
 			$is_test      = ( isset( $postback_data['mode'] ) && $postback_data['mode'] === 'test' );
+			$this->debugLog(
+				'check_postback parsed: transno=' . $trans_no .
+				', authcode=' . $authcode .
+				', authorised_raw=' . wp_json_encode( $authorised ) .
+				', authorised_type=' . gettype( $authorised ) .
+				', authorised_bool=' . ( $b_authorised ? 'true' : 'false' ) .
+				', expmonth=' . ( $postback_data['expmonth'] ?? '' ) .
+				', expyear=' . ( $postback_data['expyear'] ?? '' ) .
+				', mode=' . ( $postback_data['mode'] ?? '' )
+			);
 
 			if ( $b_authorised ) {
+				$this->debugLog( 'check_postback entering authorised branch for order #' . $order->get_id() );
 				update_post_meta( $order->get_id(), 'CityPay TransNo', $trans_no );
 				if ( isset( $postback_data['identifier'] ) ) {
 					update_post_meta( $order->get_id(), 'CityPay Identifier', $postback_data['identifier'] );
@@ -535,11 +569,14 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 					$trans_no,
 					$authcode
 				) );
+				$this->debugLog( 'check_postback before payment_complete for order #' . $order->get_id() . ' current_status=' . $order->get_status() );
 				$order->payment_complete();
+				$this->debugLog( 'check_postback payment_complete done for order #' . $order->get_id() . ' new_status=' . $order->get_status() );
 				header( 'HTTP/1.1 200 OK' );
 				return;
 			}
 
+			$this->debugLog( 'check_postback entering declined branch for order #' . $order->get_id() );
 			$order->add_order_note( sprintf(
 				'CityPay Postback Payment Not Authorised, TransNo: %s. Result: %s Error: %s: %s.',
 				$trans_no,
@@ -551,7 +588,9 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 			header( 'HTTP/1.1 200 OK' );
 			return;
 
-		} catch ( Exception $e ) {
+		} catch ( Throwable $e ) {
+			$this->errorLog( 'check_postback exception: ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine() );
+			$this->debugLog( 'check_postback trace: ' . $e->getTraceAsString() );
 			wp_die( 'CityPay Postback Error: ' . esc_html( $e->getMessage() ) );
 		}
 	}

@@ -152,13 +152,12 @@ add_action( 'wp_ajax_cp_citypay_test', function() {
 	$push( __( 'Transaction Description set', 'wc-payment-gateway-citypay' ), ! empty( $cart_desc ) );
 	$push( __( 'Gateway enabled', 'wc-payment-gateway-citypay' ), ( $enabled === 'yes' ) );
 	if ( $subs_enabled === 'yes' ) {
-		$push( __( 'Subscriptions Merchant ID set (subscriptions enabled)', 'wc-payment-gateway-citypay' ), ! empty( $subs_mid ) );
+		$push( __( 'Subscriptions Merchant ID set (subscriptions enabled)', 'wc-payment-gateway-citypay' ), !empty( $subs_mid ) || !empty( $merchant_id ));
 	} else {
 		$checks[] = array( 'label' => __( 'Subscriptions are disabled', 'wc-payment-gateway-citypay' ), 'pass' => true, 'message' => '(skip check)' );
 	}
 
-	$summary = ''; $server_ip = ''; $code = ''; $message = ''; $ping_ok = false;
-	if ( ! empty( $_SERVER['SERVER_ADDR'] ) ) { $server_ip = sanitize_text_field( wp_unslash( $_SERVER['SERVER_ADDR'] ) ); }
+	$summary = ''; $code = ''; $message = ''; $ping_ok = false;
 	if ( $all_ok ) {
 		if ( ! class_exists( 'ApiKey' ) ) { require_once __DIR__ . '/ApiKey.php'; }
 		try {
@@ -219,7 +218,7 @@ add_action( 'wp_ajax_cp_citypay_test', function() {
 		$summary = __( 'All checks successful. The plugin is configured correctly and the connection to CityPay was successful.', 'wc-payment-gateway-citypay' );
 	} else {
 		if ( $code === '007' ) {
-			$summary = __( 'CityPay connection reached the API, but your server IP is not authorised. Please email support@citypay.com with this IP.', 'wc-payment-gateway-citypay' );
+			$summary = __( 'CityPay connection reached the API, but your server IP is not authorised. Please email support@citypay.com with your server IP.', 'wc-payment-gateway-citypay' );
 		} elseif ( ! empty( $code ) ) {
 			$summary = sprintf( __( 'Connection to CityPay failed with code %s: %s', 'wc-payment-gateway-citypay' ), esc_html($code), esc_html($message) );
 		} else {
@@ -230,7 +229,6 @@ add_action( 'wp_ajax_cp_citypay_test', function() {
 	wp_send_json_success( array(
 		'checks'  => $checks,
 		'summary' => $summary,
-		'ip'      => $server_ip,
 		'code'    => $code,
 		'message' => $message,
 	) );
