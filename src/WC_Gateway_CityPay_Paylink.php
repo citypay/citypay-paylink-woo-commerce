@@ -90,7 +90,6 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
 		add_action( 'woocommerce_api_citypay-postback', array( $this, 'check_postback' ) );
 		add_action( 'woocommerce_receipt_' . $this->id, array( $this, 'receipt_page' ) );
-		add_action( 'init', array( $this, 'check_postback' ) );
 	}
 
 	public function admin_options() {
