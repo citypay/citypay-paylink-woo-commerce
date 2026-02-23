@@ -49,3 +49,7 @@ if ($this->cp_subscriptions === 'yes') {
 <table class="form-table">
     <?php $this->generate_settings_html(); ?>
 </table><!--/.form-table-->
+
+<p><button type="button" class="button button-primary" id="cp-citypay-test-button">Test Settings and Connection to Citypay</button><span id="cp-citypay-test-note" style="margin-left:8px;"></span></p>
+<div id="cp-citypay-overlay" style="display:none;"><div class="cp-citypay-overlay__backdrop"></div><div class="cp-citypay-overlay__panel"><h2 id="cp-citypay-overlay-title">Testing CityPay Configuration</h2><div class="cp-citypay-spinner"></div><div id="cp-citypay-results" class="cp-citypay-results" aria-live="polite"></div><p style="margin-top:10px;"><a href="#" id="cp-citypay-close" class="button">Close</a></p></div></div>
+

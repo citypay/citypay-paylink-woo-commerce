@@ -1,0 +1,40 @@
+(function ($) {
+    function s() {
+        $('#cp-citypay-results').empty();
+        $('.cp-citypay-spinner').show();
+        $('#cp-citypay-overlay').show();
+        $('#cp-citypay-test-note').text('');
+    }
+
+    function h() {
+        $('#cp-citypay-overlay').hide();
+    }
+
+    $(document).on('click', '#cp-citypay-close', function (e) {
+        e.preventDefault();
+        h();
+    });
+    $(document).on('click', '#cp-citypay-test-button', function () {
+        s();
+        $.post(ajaxurl, {action: 'cp_citypay_test', _ajax_nonce: CP_CITYPAY_TEST.nonce}).done(function (res) {
+            $('.cp-citypay-spinner').hide();
+            if (!res || !res.success) {
+                $('#cp-citypay-results').html('<p class="cp-fail">Unexpected error. Please check your logs.</p>');
+                return;
+            }
+            var html = '<ul>';
+            (res.data.checks || []).forEach(function (c) {
+                var cls = c.pass ? 'cp-ok' : 'cp-fail';
+                html += '<li class="' + cls + '">' + c.label + ': ' + (c.pass ? 'OK' : 'Missing/Invalid') + (c.message ? ' — ' + c.message : '') + '</li>';
+            });
+            html += '</ul>';
+            if (res.data.summary) {
+                html += '<p><strong>' + res.data.summary + '</strong></p>';
+            }
+            $('#cp-citypay-results').html(html);
+        }).fail(function () {
+            $('.cp-citypay-spinner').hide();
+            $('#cp-citypay-results').html('<p class="cp-fail">AJAX request failed.</p>');
+        });
+    });
+})(jQuery);
