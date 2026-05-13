@@ -21,24 +21,29 @@ Allows you to sell products and services with recurring payments using [CityPay 
   * ```Client ID``` - CityPay Client ID
   * ```Subscriptions Merchant ID``` - If you want to process recurring payments with a different Merchant ID
   * ```Subscriptions Prefix``` - Subscription Prefix for the store. If you have others stores using the same Client ID, use a different prefix for each. (maxLength: 8)
+* Optional synchronized-renewal settings in the CityPay gateway:
+  * ```CityPay Zero-Amount Setup For Synchronized Renewals``` - Enables CityPay cutoff-day logic for synchronized monthly subscriptions.
+  * ```CityPay Cutoff Day``` - Orders placed after this day use a zero-amount CityPay setup and first pay on the next synchronized renewal date.
 
 ## Creating a subscription product
 Please follow the [Subscriptions Store Manager Guide](https://woocommerce.com/document/subscriptions/store-manager-guide/) and take in consideration our Supported/Unsupported Features.
+For the cutoff-day setup, WooCommerce Subscriptions should be configured to use synchronized renewals and `Prorate First Renewal` should be set to `Never (do not charge any recurring amount)`.
 
 
 ## WooCommerce Subscriptions - Supported Features
 
 * Sign-Up Fees - Charge an initial amount to account for customer setup costs.
+* Free Trials with subsequent recurring payments.
 * Variable Subscriptions - Create variable subscription products and allow your customers to choose a subscription that suits their needs.
 * Subscription Management - Store owners get full-featured subscription management.
 * Subscriber Account Management - Your customers can also manage their own subscriptions. With the My Account > View Subscription page.
 * Flexible Product Options - When creating a subscription product, you can make the product downloadable, virtual or physical, charge renewal payments weekly, monthly or annually.
 * Customer Emails - Automatically notify customers when a subscription renewal payment is processed, a subscription is cancelled or when a subscription has expired with the built-in subscription emails.
+* Zero-Amount Setup for Synchronized Renewals - For monthly subscriptions, optionally configure a CityPay gateway cutoff day so customers on or before the cutoff are charged the first recurring amount at sign-up, while customers after the cutoff use a zero-amount setup checkout and pay on the next synchronized renewal date.
 
 
 ##  WooCommerce Subscriptions - Unsupported Features
 
-* Free Trials with subsequents recurring payments.
 * Synchronise renewals - Align subscription renewal to a specific day of the week, month or year.
 * Upgrades/Downgrades - Allow subscribers to switch (upgrade or downgrade) between different subscriptions.
 * Limit the product to one-per-customer and even charge shipping only on the initial order.

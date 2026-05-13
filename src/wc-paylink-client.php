@@ -117,6 +117,15 @@ class CityPay_PayLink
         $this->base_call['recurring'] = $value;
     }
 
+    /**
+     * Adds transaction type for special setup flows.
+     * @param $value
+     * @return void
+     */
+    public function setTxType($value) {
+        $this->base_call['txtype'] = $value;
+    }
+
     public function setRequestConfig($testmode, $postback_url, $return_success_url, $return_failure_url)
     {
         $this->request_config = array(

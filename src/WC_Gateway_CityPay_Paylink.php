@@ -32,6 +32,8 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 	public $cp_subscriptions;
 	public $subs_merchant_id;
 	public $client_id;
+	public $subscription_sync_enabled;
+	public $subscription_sync_cutoff_day;
 	public $licence_key;
 	public $version;
 	public $cart_desc;
@@ -77,6 +79,8 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 		$this->cp_subscriptions   = $this->get_option( 'cp_subscriptions', 'no' );
 		$this->subs_merchant_id   = $this->get_option( 'subs_merchant_id', '' );
 		$this->client_id          = $this->get_option( 'client_id', '' );
+		$this->subscription_sync_enabled    = $this->get_option( 'subscription_sync_enabled', 'no' );
+		$this->subscription_sync_cutoff_day = $this->get_option( 'subscription_sync_cutoff_day', '7' );
 		$this->subscriptions_prefix = $this->get_option( 'subscriptions_prefix', '' );
 		$this->cart_desc          = $this->get_option( 'cart_desc', __( 'Your order from StoreName', 'wc-payment-gateway-citypay' ) );
 		$this->t_ident_prefix     = $this->get_option( 't_ident_prefix', 'OrderID#' );
@@ -203,6 +207,24 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 				'description' => __( 'If empty, main Merchant ID is used.', 'wc-payment-gateway-citypay' ),
 				'default'     => '',
 				'placeholder' => 'Subscriptions Merchant ID',
+			),
+			'subscription_sync_enabled' => array(
+				'title'       => __( 'CityPay Zero-Amount Setup For Synchronized Renewals', 'wc-payment-gateway-citypay' ),
+				'type'        => 'checkbox',
+				'label'       => __( 'Enable CityPay cutoff-day logic for synchronized monthly subscriptions', 'wc-payment-gateway-citypay' ),
+				'default'     => 'no',
+				'description' => __( 'Requires WooCommerce Subscriptions synchronized renewals to be enabled. Turn this on in WooCommerce > Settings > Subscriptions by enabling Synchronise Renewals, then configure the subscription product to renew on the required day (for example the 1st of the month). On or before the cutoff day, the first recurring amount is charged at sign-up. After the cutoff day, the initial CityPay amount is 0 and the first payment is taken on the next synchronized renewal date. For best results, set Prorate First Renewal to "Never (do not charge any recurring amount)".', 'wc-payment-gateway-citypay' ),
+			),
+			'subscription_sync_cutoff_day' => array(
+				'title'             => __( 'CityPay Cutoff Day', 'wc-payment-gateway-citypay' ),
+				'type'              => 'number',
+				'description'       => __( 'Orders placed after this day use a 0-amount CityPay setup for synchronized monthly subscriptions. Recommended range: 1-28.', 'wc-payment-gateway-citypay' ),
+				'default'           => '7',
+				'custom_attributes' => array(
+					'min'  => '1',
+					'max'  => '28',
+					'step' => '1',
+				),
 			),
 
 			// Marks / card logos
@@ -348,7 +370,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 				$this->merchant_id,
 				$this->licence_key,
 				$cart_id,
-				$this->formatedAmount( $order->get_total() ),
+				$this->get_paylink_amount_for_order( $order ),
 				get_woocommerce_currency(),
 				$cart_desc
 			);
@@ -390,6 +412,10 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 					$this->paylink->addSubscriptionId( $subscription_id );
 					$this->paylink->setOptionsAndAccountNo( $accountNo );
 					$this->paylink->setRecurring( true );
+
+					if ( $this->is_zero_amount_sync_subscription_order( $order ) ) {
+						$this->paylink->setTxType( 'E' );
+					}
 				}
 			}
 
@@ -412,6 +438,63 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 		}
 		$url = $this->generate_paylink_url( $order_id );
 		return array( 'result' => 'success', 'redirect' => $url );
+	}
+
+	protected function get_paylink_amount_for_order( $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			return 0;
+		}
+
+		$total = $order->get_total();
+
+		if ( $this->is_subscriptions_enabled()
+			&& class_exists( 'WC_Subscriptions_Order' )
+			&& function_exists( 'wcs_order_contains_subscription' )
+			&& function_exists( 'citypay_is_zero_amount_sync_enabled_for_product' ) ) {
+			if ( wcs_order_contains_subscription( $order->get_id() ) ) {
+				foreach ( $order->get_items() as $item ) {
+					$product = $item->get_product();
+
+					if ( $product && citypay_is_zero_amount_sync_enabled_for_product( $product ) ) {
+						$total = WC_Subscriptions_Order::get_total_initial_payment( $order );
+						break;
+					}
+				}
+			}
+		}
+
+		return $this->formatedAmount( $total );
+	}
+
+	protected function is_zero_amount_sync_subscription_order( $order ) {
+		if ( ! $order instanceof WC_Order || ! $this->is_subscriptions_enabled() ) {
+			return false;
+		}
+
+		if ( ! function_exists( 'wcs_order_contains_subscription' ) || ! wcs_order_contains_subscription( $order->get_id() ) ) {
+			return false;
+		}
+
+		if ( ! function_exists( 'citypay_is_zero_amount_sync_enabled_for_product' ) ) {
+			return false;
+		}
+
+		$has_enabled_product = false;
+
+		foreach ( $order->get_items() as $item ) {
+			$product = $item->get_product();
+
+			if ( $product && citypay_is_zero_amount_sync_enabled_for_product( $product ) ) {
+				$has_enabled_product = true;
+				break;
+			}
+		}
+
+		if ( ! $has_enabled_product ) {
+			return false;
+		}
+
+		return $this->get_paylink_amount_for_order( $order ) === 0;
 	}
 
 	/**
