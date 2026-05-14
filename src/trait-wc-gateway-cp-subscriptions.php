@@ -7,6 +7,77 @@ trait WC_Gateway_CP_Subscriptions
 {
     use WC_CP_API;
 
+    protected function get_subscription_account_no($subscription, $renewal_order = null)
+    {
+        if (!$subscription || !method_exists($subscription, 'get_meta')) {
+            return '';
+        }
+
+        $accountNo = $subscription->get_meta('AccountNo', true);
+        if (!empty($accountNo)) {
+            return $accountNo;
+        }
+
+        $meta_keys = array('AccountNo');
+        if (method_exists($this, 'get_subscription_account_meta_key')) {
+            $meta_keys[] = $this->get_subscription_account_meta_key();
+        }
+
+        $orders_to_check = array();
+        if ($renewal_order instanceof WC_Order) {
+            $orders_to_check[] = $renewal_order;
+        }
+
+        if (method_exists($subscription, 'get_parent_id')) {
+            $parent_order = wc_get_order($subscription->get_parent_id());
+            if ($parent_order instanceof WC_Order) {
+                $orders_to_check[] = $parent_order;
+            }
+        }
+
+        foreach ($orders_to_check as $order) {
+            foreach ($meta_keys as $meta_key) {
+                $accountNo = $order->get_meta($meta_key, true);
+                if (!empty($accountNo)) {
+                    $this->debugLog('Recovered AccountNo from order #' . $order->get_id() . ' using meta key ' . $meta_key . '.');
+                    return $accountNo;
+                }
+            }
+        }
+
+        return '';
+    }
+
+    protected function mark_renewal_payment_complete($renewal_order, $trans_no = '')
+    {
+        if ($renewal_order instanceof WC_Order && !empty($trans_no) && method_exists($renewal_order, 'set_transaction_id')) {
+            $renewal_order->set_transaction_id((string)$trans_no);
+            $renewal_order->save();
+        }
+
+        if (class_exists('WC_Subscriptions_Manager') && method_exists('WC_Subscriptions_Manager', 'process_subscription_payments_on_order')) {
+            WC_Subscriptions_Manager::process_subscription_payments_on_order($renewal_order);
+            $this->debugLog('Recorded renewal payment via WC_Subscriptions_Manager::process_subscription_payments_on_order().');
+        }
+
+        if ($renewal_order instanceof WC_Order && !$renewal_order->is_paid()) {
+            $renewal_order->payment_complete((string)$trans_no);
+            $this->debugLog('Marked renewal order paid via WC_Order::payment_complete().');
+        }
+    }
+
+    protected function mark_renewal_payment_failed($renewal_order)
+    {
+        if (class_exists('WC_Subscriptions_Manager') && method_exists('WC_Subscriptions_Manager', 'process_subscription_payment_failure_on_order')) {
+            WC_Subscriptions_Manager::process_subscription_payment_failure_on_order($renewal_order);
+            $this->debugLog('Recorded renewal failure via WC_Subscriptions_Manager::process_subscription_payment_failure_on_order().');
+        }
+
+        if ($renewal_order instanceof WC_Order && $renewal_order->get_status() !== 'failed') {
+            $renewal_order->update_status('failed');
+        }
+    }
+
     /**
      *  Checks if subscriptions are enabled on the site.
      * @return bool
@@ -56,12 +127,17 @@ trait WC_Gateway_CP_Subscriptions
 
             $renewal_order_id = $renewal_order->get_id();
             $subscriptions =  wcs_get_subscriptions_for_renewal_order($renewal_order_id);
-            $subscription_id = array_values($subscriptions)[0]->get_id();  // we are assuming that we just accept one subscription
+            $subscription = array_values($subscriptions)[0];  // we are assuming that we just accept one subscription
+            $subscription_id = $subscription->get_id();
 
             $this->debugLog('scheduled_subscription_payment subscription_id:' . $subscription_id );
 
             $merchant_id = $this->get_merchant_id();
-            $accountNo = get_post_meta($subscription_id, 'AccountNo', true);
+            $accountNo = $this->get_subscription_account_no($subscription, $renewal_order);
+            if (empty($accountNo)) {
+                throw new Exception('Missing CityPay AccountNo for subscription #' . $subscription_id . '.');
+            }
+
             $account = $this->account_retrieval($accountNo);
 
             $token = array_values($account['cards'])[0]['token'];
@@ -100,16 +176,17 @@ trait WC_Gateway_CP_Subscriptions
                 if ($authorised) {
 
                     // Transaction authorised
-                    update_post_meta($renewal_order->get_id(), 'CityPay TransNo', $trans_no);
-                    update_post_meta($renewal_order->get_id(), 'CityPay Identifier', $response_auth_response['identifier']);
+                    $renewal_order->update_meta_data('CityPay TransNo', $trans_no);
+                    $renewal_order->update_meta_data('CityPay Identifier', $response_auth_response['identifier']);
                     $maskedpan = $response_auth_response['scheme'] . '/' . $response_auth_response['maskedpan'];
-                    update_post_meta($renewal_order->get_id(), 'Card used', $maskedpan);
+                    $renewal_order->update_meta_data('Card used', $maskedpan);
+                    $renewal_order->save_meta_data();
 
                     $renewal_order->add_order_note(sprintf(__('%s CityPay Renewal Payment OK. TransNo: %s, AuthCode: %s',
                         'wc-payment-gateway-citypay'), $live ? "" : "Test", $trans_no, $authcode));
 
-                    $renewal_order->payment_complete();
-                    $this->debugLog('Authorised, Payment complete.');
+                    $this->mark_renewal_payment_complete($renewal_order, $trans_no);
+                    $this->debugLog('Authorised, renewal payment recorded.');
                     return;
                 }
 
@@ -123,7 +200,7 @@ trait WC_Gateway_CP_Subscriptions
                 $this->debugLog('No token');
                 $renewal_order->add_order_note("Something went wrong. Renewal Failed.");
             }
-            $renewal_order->update_status('failed');
+            $this->mark_renewal_payment_failed($renewal_order);
         } catch (Exception $e) {
             $message = $e->getMessage();
             $renewal_order->add_order_note($e->getMessage());

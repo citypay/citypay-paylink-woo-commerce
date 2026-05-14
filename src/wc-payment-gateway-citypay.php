@@ -47,20 +47,48 @@ if ( ! function_exists( 'citypay_get_subscription_alignment_settings' ) ) {
 		);
 	}
 }
-if ( ! function_exists( 'citypay_is_zero_amount_sync_enabled_for_product' ) ) {
-	function citypay_is_zero_amount_sync_enabled_for_product( $product ) {
+if ( ! function_exists( 'citypay_is_synchronised_subscription_product' ) ) {
+	function citypay_is_synchronised_subscription_product( $product ) {
+		if ( ! $product instanceof WC_Product || ! class_exists( 'WC_Subscriptions_Product' ) ) {
+			return false;
+		}
+
+		if ( ! method_exists( 'WC_Subscriptions_Product', 'is_subscription' ) || ! WC_Subscriptions_Product::is_subscription( $product ) ) {
+			return false;
+		}
+
+		$product_id = $product->get_id();
+		if ( ! $product_id ) {
+			return false;
+		}
+
+		$sync_date = get_post_meta( $product_id, '_subscription_payment_sync_date', true );
+
+		if ( empty( $sync_date ) && method_exists( $product, 'get_parent_id' ) ) {
+			$parent_id = $product->get_parent_id();
+			if ( $parent_id ) {
+				$sync_date = get_post_meta( $parent_id, '_subscription_payment_sync_date', true );
+			}
+		}
+
+		return ! empty( $sync_date );
+	}
+}
+if ( ! function_exists( 'citypay_is_cutoff_override_enabled_for_product' ) ) {
+	function citypay_is_cutoff_override_enabled_for_product( $product ) {
 		$settings = citypay_get_subscription_alignment_settings();
 
 		if ( empty( $settings['enabled'] ) || ! class_exists( 'WC_Subscriptions_Product' ) ) {
 			return false;
 		}
 
-		return WC_Subscriptions_Product::get_period( $product ) === 'month';
+		return citypay_is_synchronised_subscription_product( $product )
+			&& WC_Subscriptions_Product::get_period( $product ) === 'month';
 	}
 }
 if ( ! function_exists( 'citypay_should_use_zero_amount_sync_now' ) ) {
 	function citypay_should_use_zero_amount_sync_now( $product ) {
-		if ( ! citypay_is_zero_amount_sync_enabled_for_product( $product ) ) {
+		if ( ! citypay_is_cutoff_override_enabled_for_product( $product ) ) {
 			return false;
 		}
 
@@ -87,11 +115,6 @@ add_action( 'plugins_loaded', function () {
 	require_once __DIR__ . '/trait-wc-gateway-cp-subscriptions.php';
 	require_once __DIR__ . '/trait-wc-citypay-api.php';
 
-	// IMPORTANT: Paylink client posts to paylink3, not v6. Test is via "test" flag in JSON.
-	if ( ! defined( 'CITYPAY_PAYLINK_API_ROOT' ) ) {
-		define( 'CITYPAY_PAYLINK_API_ROOT', 'https://secure.citypay.com/paylink3' );
-	}
-
 	// Load client and gateway
 	require_once __DIR__ . '/wc-paylink-client.php';
 	require_once __DIR__ . '/WC_Gateway_CityPay_Paylink.php';
@@ -103,7 +126,7 @@ add_action( 'plugins_loaded', function () {
 	} );
 
 	add_filter( 'woocommerce_subscriptions_product_sign_up_fee', function( $sign_up_fee, $product ) {
-		if ( ! function_exists( 'citypay_is_zero_amount_sync_enabled_for_product' ) || ! citypay_is_zero_amount_sync_enabled_for_product( $product ) ) {
+		if ( ! function_exists( 'citypay_is_cutoff_override_enabled_for_product' ) || ! citypay_is_cutoff_override_enabled_for_product( $product ) ) {
 			return $sign_up_fee;
 		}
 
@@ -115,7 +138,16 @@ add_action( 'plugins_loaded', function () {
 			return $sign_up_fee;
 		}
 
-		return (float) $product->get_price();
+		$subscription_price = $product->get_meta( '_subscription_price', true );
+
+		if ( '' === $subscription_price && method_exists( $product, 'get_parent_id' ) ) {
+			$parent_id = $product->get_parent_id();
+			if ( $parent_id ) {
+				$subscription_price = get_post_meta( $parent_id, '_subscription_price', true );
+			}
+		}
+
+		return '' === $subscription_price ? (float) $sign_up_fee : (float) $subscription_price;
 	}, 10, 2 );
 }, 20 );
 
@@ -302,6 +334,17 @@ if ( ! function_exists( 'cp_is_citypay_order' ) ) {
 	}
 }
 
+if ( ! function_exists( 'cp_get_order_meta_value' ) ) {
+	function cp_get_order_meta_value( $order_or_id, $key ) {
+		$order = $order_or_id instanceof WC_Order ? $order_or_id : wc_get_order( $order_or_id );
+		if ( $order instanceof WC_Order ) {
+			return $order->get_meta( $key, true );
+		}
+
+		return '';
+	}
+}
+
 /**
  * Register meta box on both classic and HPOS order edit screens.
  * - Classic screen id uses post type "shop_order"
@@ -322,8 +365,7 @@ add_action( 'add_meta_boxes', function( $post_type, $post ) {
 			// Only show content for CityPay orders; otherwise show nothing
 			if ( ! cp_is_citypay_order( $order ) ) { return; }
 
-			$order_id = $order->get_id();
-			$get = function( $k ) use ( $order_id ) { return get_post_meta( $order_id, $k, true ); };
+			$get = function( $k ) use ( $order ) { return cp_get_order_meta_value( $order, $k ); };
 
 			$rows = array(
 				__( 'Authorisation Code', 'wc-payment-gateway-citypay' ) => $get('_cp_attrib_authcode'),
@@ -385,13 +427,13 @@ add_action( 'manage_shop_order_posts_custom_column', function( $column ) {
 
 	switch ( $column ) {
 		case 'cp_authcode':
-			echo esc_html( (string) get_post_meta( $post_id, '_cp_attrib_authcode', true ) );
+			echo esc_html( (string) cp_get_order_meta_value( $order, '_cp_attrib_authcode' ) );
 			break;
 
 		case 'cp_cardscheme':
-			$val = get_post_meta( $post_id, '_cp_attrib_card_scheme', true );
+			$val = cp_get_order_meta_value( $order, '_cp_attrib_card_scheme' );
 			if ( $val === '' ) {
-				$card_used = get_post_meta( $post_id, 'Card used', true );
+				$card_used = cp_get_order_meta_value( $order, 'Card used' );
 				if ( is_string( $card_used ) && strpos( $card_used, '/' ) !== false ) {
 					$val = ucwords( strtolower( trim( explode( '/', $card_used )[0] ) ) );
 				}
@@ -400,12 +442,12 @@ add_action( 'manage_shop_order_posts_custom_column', function( $column ) {
 			break;
 
 		case 'cp_cardname':
-			echo esc_html( (string) get_post_meta( $post_id, '_cp_attrib_name_on_card', true ) );
+			echo esc_html( (string) cp_get_order_meta_value( $order, '_cp_attrib_name_on_card' ) );
 			break;
 
 		case 'cp_transno':
-			$val = get_post_meta( $post_id, '_cp_attrib_transno', true );
-			if ( $val === '' ) { $val = get_post_meta( $post_id, 'CityPay TransNo', true ); }
+			$val = cp_get_order_meta_value( $order, '_cp_attrib_transno' );
+			if ( $val === '' ) { $val = cp_get_order_meta_value( $order, 'CityPay TransNo' ); }
 			echo esc_html( (string) $val );
 			break;
 	}
@@ -454,16 +496,15 @@ add_action( 'woocommerce_shop_order_list_table_custom_column', function( $column
 	if ( ! in_array( $column, array( 'cp_authcode','cp_cardscheme','cp_cardname','cp_transno' ), true ) ) { return; }
 	if ( ! $order instanceof WC_Order || ! cp_is_citypay_order( $order ) ) { echo ''; return; }
 
-	$order_id = $order->get_id();
 	switch ( $column ) {
 		case 'cp_authcode':
-			echo esc_html( (string) get_post_meta( $order_id, '_cp_attrib_authcode', true ) );
+			echo esc_html( (string) cp_get_order_meta_value( $order, '_cp_attrib_authcode' ) );
 			break;
 
 		case 'cp_cardscheme':
-			$val = get_post_meta( $order_id, '_cp_attrib_card_scheme', true );
+			$val = cp_get_order_meta_value( $order, '_cp_attrib_card_scheme' );
 			if ( $val === '' ) {
-				$card_used = get_post_meta( $order_id, 'Card used', true );
+				$card_used = cp_get_order_meta_value( $order, 'Card used' );
 				if ( is_string( $card_used ) && strpos( $card_used, '/' ) !== false ) {
 					$val = ucwords( strtolower( trim( explode( '/', $card_used )[0] ) ) );
 				}
@@ -472,12 +513,12 @@ add_action( 'woocommerce_shop_order_list_table_custom_column', function( $column
 			break;
 
 		case 'cp_cardname':
-			echo esc_html( (string) get_post_meta( $order_id, '_cp_attrib_name_on_card', true ) );
+			echo esc_html( (string) cp_get_order_meta_value( $order, '_cp_attrib_name_on_card' ) );
 			break;
 
 		case 'cp_transno':
-			$val = get_post_meta( $order_id, '_cp_attrib_transno', true );
-			if ( $val === '' ) { $val = get_post_meta( $order_id, 'CityPay TransNo', true ); }
+			$val = cp_get_order_meta_value( $order, '_cp_attrib_transno' );
+			if ( $val === '' ) { $val = cp_get_order_meta_value( $order, 'CityPay TransNo' ); }
 			echo esc_html( (string) $val );
 			break;
 	}

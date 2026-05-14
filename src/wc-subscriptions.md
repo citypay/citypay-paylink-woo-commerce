@@ -39,12 +39,11 @@ For the cutoff-day setup, WooCommerce Subscriptions should be configured to use 
 * Subscriber Account Management - Your customers can also manage their own subscriptions. With the My Account > View Subscription page.
 * Flexible Product Options - When creating a subscription product, you can make the product downloadable, virtual or physical, charge renewal payments weekly, monthly or annually.
 * Customer Emails - Automatically notify customers when a subscription renewal payment is processed, a subscription is cancelled or when a subscription has expired with the built-in subscription emails.
-* Zero-Amount Setup for Synchronized Renewals - For monthly subscriptions, optionally configure a CityPay gateway cutoff day so customers on or before the cutoff are charged the first recurring amount at sign-up, while customers after the cutoff use a zero-amount setup checkout and pay on the next synchronized renewal date.
+* Synchronised Renewals - Supports WooCommerce synchronized-renewal products. For monthly subscriptions, optionally configure a CityPay gateway cutoff day so customers on or before the cutoff are charged the first recurring amount at sign-up, while customers after the cutoff use a zero-amount setup checkout and pay on the next synchronized renewal date.
 
 
 ##  WooCommerce Subscriptions - Unsupported Features
 
-* Synchronise renewals - Align subscription renewal to a specific day of the week, month or year.
 * Upgrades/Downgrades - Allow subscribers to switch (upgrade or downgrade) between different subscriptions.
 * Limit the product to one-per-customer and even charge shipping only on the initial order.
 * Multiple Subscriptions - Purchase different subscription products in the same transaction.

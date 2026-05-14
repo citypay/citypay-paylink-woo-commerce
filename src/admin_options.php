@@ -4,13 +4,18 @@ $configured = true;
 $subs_configured_note = false;
 $subs_prefix_note = false;
 $subs_prefix_max_len = 8;
+$client_id_note = false;
 
 if ((empty($this->merchant_curr)) || (empty($this->merchant_id)) || (empty($this->licence_key))) {
     $configured = false;
 }
 
+if (empty($this->client_id)) {
+    $client_id_note = true;
+}
+
 if ($this->cp_subscriptions === 'yes') {
-   if (empty($this->client_id) || empty($this->subscriptions_prefix)) {
+   if (empty($this->subscriptions_prefix)) {
        $subs_configured_note = true;
    }
 
@@ -25,13 +30,16 @@ if ($this->cp_subscriptions === 'yes') {
 <p class="main">
     Accept <b>CityPay</b> payments on your WooCommerce powered store!</p>
 
-<?php if (!$configured || $subs_configured_note || $subs_prefix_note) : ?>
+<?php if (!$configured || $client_id_note || $subs_configured_note || $subs_prefix_note) : ?>
     <div id="wc_get_started">
         <?php if (!$configured) : ?>
             <p><br><b>NOTE: </b> You must enter your merchant ID and licence key</p>
         <?php endif; ?>
+        <?php if ($client_id_note) : ?>
+            <p><b>NOTE: </b> You must enter a Client ID to create Paylink tokens using the CityPay API.</p>
+        <?php endif; ?>
         <?php if ($subs_configured_note) : ?>
-            <p><b>NOTE: </b> If you have Subscriptions Enable you must enter a Client ID and a Subscriptions prefix</p>
+            <p><b>NOTE: </b> If you have Subscriptions Enable you must enter a Subscriptions prefix</p>
         <?php endif; ?>
         <?php if ($subs_prefix_note) : ?>
             <p><b>NOTE: </b>Subscriptions Prefix value exceeds the Max Length</p>
