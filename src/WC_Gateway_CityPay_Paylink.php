@@ -94,8 +94,6 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
 		add_action( 'woocommerce_api_citypay-postback', array( $this, 'check_postback' ) );
 		add_action( 'woocommerce_receipt_' . $this->id, array( $this, 'receipt_page' ) );
-		add_action( 'woocommerce_thankyou_' . $this->id, array( $this, 'maybe_empty_cart_after_return' ) );
-		add_action( 'template_redirect', array( $this, 'maybe_empty_cart_on_order_received_page' ), 20 );
 	}
 
 	public function admin_options() {
@@ -368,8 +366,8 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 			$cart_desc = trim( $this->cart_desc );
 			if ( $cart_desc === '' ) { $cart_desc = 'Order ' . $order_num; }
 
-			$this->paylink->setBaseCall(
-				$this->get_merchant_id(),
+				$this->paylink->setBaseCall(
+					$this->get_checkout_merchant_id( $order ),
 				$this->licence_key,
 				$cart_id,
 				$this->get_paylink_amount_for_order( $order ),
@@ -449,8 +447,23 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 		return array( 'result' => 'success', 'redirect' => $url );
 	}
 
+	protected function get_checkout_merchant_id( $order ) {
+		if ( ! ( $order instanceof WC_Order ) ) {
+			return $this->merchant_id;
+		}
+
+		if ( $this->is_subscriptions_enabled()
+			&& ! empty( $this->subs_merchant_id )
+			&& function_exists( 'wcs_order_contains_subscription' )
+			&& wcs_order_contains_subscription( $order->get_id() ) ) {
+			return $this->subs_merchant_id;
+		}
+
+		return $this->merchant_id;
+	}
+
 		protected function get_paylink_amount_for_order( $order ) {
-			if ( ! $order instanceof WC_Order ) {
+			if ( ! ( $order instanceof WC_Order ) ) {
 				return 0;
 			}
 
@@ -476,7 +489,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 	}
 
 	protected function is_zero_amount_sync_subscription_order( $order ) {
-		if ( ! $order instanceof WC_Order || ! $this->is_subscriptions_enabled() ) {
+		if ( ! ( $order instanceof WC_Order ) || ! $this->is_subscriptions_enabled() ) {
 			return false;
 		}
 
@@ -519,7 +532,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 	}
 
 	protected function update_entity_meta_value( $entity, $key, $value ) {
-		if ( ! $entity instanceof WC_Data ) {
+		if ( ! ( $entity instanceof WC_Data ) ) {
 			return;
 		}
 
@@ -528,7 +541,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 	}
 
 	protected function save_subscription_account_no_to_order( $order, $accountNo ) {
-		if ( ! $order instanceof WC_Order || empty( $accountNo ) ) {
+		if ( ! ( $order instanceof WC_Order ) || empty( $accountNo ) ) {
 			return;
 		}
 
@@ -536,7 +549,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 	}
 
 	protected function sync_subscription_account_no_from_order( $order ) {
-		if ( ! $order instanceof WC_Order || ! $this->is_subscriptions_enabled() || ! function_exists( 'wcs_get_subscriptions_for_order' ) ) {
+		if ( ! ( $order instanceof WC_Order ) || ! $this->is_subscriptions_enabled() || ! function_exists( 'wcs_get_subscriptions_for_order' ) ) {
 			return;
 		}
 
@@ -561,69 +574,6 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 			$subscription->add_order_note( 'Subscription AccountNo: ' . $accountNo );
 			$this->debugLog( 'Synced AccountNo to subscription #' . $subscription_id . ' for order #' . $order->get_id() );
 		}
-	}
-
-	protected function maybe_empty_cart() {
-		if ( ! function_exists( 'WC' ) || ! WC() ) {
-			return;
-		}
-
-		if ( WC()->cart ) {
-			WC()->cart->empty_cart( true );
-		}
-
-		if ( WC()->session ) {
-			if ( ! is_user_logged_in() && method_exists( WC()->session, 'destroy_session' ) ) {
-				WC()->session->destroy_session();
-				$this->debugLog( 'Destroyed WooCommerce guest session after successful CityPay payment.' );
-				return;
-			}
-
-			if ( method_exists( WC()->session, 'set' ) ) {
-				WC()->session->set( 'order_awaiting_payment', null );
-				WC()->session->set( 'store_api_draft_order', null );
-			}
-		}
-
-		$this->debugLog( 'Emptied WooCommerce cart after successful CityPay payment.' );
-	}
-
-	public function maybe_empty_cart_after_return( $order_id ) {
-		$order = wc_get_order( $order_id );
-		if ( ! $order instanceof WC_Order ) {
-			return;
-		}
-
-		if ( $order->get_payment_method() !== $this->id ) {
-			return;
-		}
-
-		if ( 'yes' === $order->get_meta( '_citypay_cart_cleared', true ) ) {
-			return;
-		}
-
-		if ( $order->is_paid() || in_array( $order->get_status(), array( 'processing', 'completed' ), true ) ) {
-			$this->maybe_empty_cart();
-			$order->update_meta_data( '_citypay_cart_cleared', 'yes' );
-			$order->save_meta_data();
-		}
-	}
-
-	public function maybe_empty_cart_on_order_received_page() {
-		if ( ! function_exists( 'is_order_received_page' ) || ! is_order_received_page() ) {
-			return;
-		}
-
-		$order_id = absint( get_query_var( 'order-received' ) );
-		if ( ! $order_id && isset( $_GET['key'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$order_id = wc_get_order_id_by_order_key( sanitize_text_field( wp_unslash( $_GET['key'] ) ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		}
-
-		if ( ! $order_id ) {
-			return;
-		}
-
-		$this->maybe_empty_cart_after_return( $order_id );
 	}
 
 	/**

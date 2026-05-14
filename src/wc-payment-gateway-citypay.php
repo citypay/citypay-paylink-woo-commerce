@@ -49,7 +49,7 @@ if ( ! function_exists( 'citypay_get_subscription_alignment_settings' ) ) {
 }
 if ( ! function_exists( 'citypay_is_synchronised_subscription_product' ) ) {
 	function citypay_is_synchronised_subscription_product( $product ) {
-		if ( ! $product instanceof WC_Product || ! class_exists( 'WC_Subscriptions_Product' ) ) {
+		if ( ! ( $product instanceof WC_Product ) || ! class_exists( 'WC_Subscriptions_Product' ) ) {
 			return false;
 		}
 
@@ -134,7 +134,7 @@ add_action( 'plugins_loaded', function () {
 			return 0;
 		}
 
-		if ( ! $product instanceof WC_Product ) {
+		if ( ! ( $product instanceof WC_Product ) ) {
 			return $sign_up_fee;
 		}
 
@@ -360,7 +360,7 @@ add_action( 'add_meta_boxes', function( $post_type, $post ) {
 
 			// Resolve WC_Order object (works for classic & HPOS)
 			$order = $post_or_order instanceof WC_Order ? $post_or_order : wc_get_order( $post_or_order->ID );
-			if ( ! $order instanceof WC_Order ) { return; }
+			if ( ! ( $order instanceof WC_Order ) ) { return; }
 
 			// Only show content for CityPay orders; otherwise show nothing
 			if ( ! cp_is_citypay_order( $order ) ) { return; }
@@ -494,7 +494,7 @@ add_filter( 'woocommerce_shop_order_list_table_columns', function( $columns ) {
 
 add_action( 'woocommerce_shop_order_list_table_custom_column', function( $column, $order ) {
 	if ( ! in_array( $column, array( 'cp_authcode','cp_cardscheme','cp_cardname','cp_transno' ), true ) ) { return; }
-	if ( ! $order instanceof WC_Order || ! cp_is_citypay_order( $order ) ) { echo ''; return; }
+	if ( ! ( $order instanceof WC_Order ) || ! cp_is_citypay_order( $order ) ) { echo ''; return; }
 
 	switch ( $column ) {
 		case 'cp_authcode':
