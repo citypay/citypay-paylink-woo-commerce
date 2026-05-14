@@ -238,6 +238,11 @@ class CityPay_PayLink
             $url = 'https://payments.citypay.com/create';
         }
 
+        $this->debugLog(
+            'CityPay Paylink auth mode: ' .
+            ($use_client_id_auth ? 'client_id' : 'legacy_fallback') .
+            ', testmode=' . $this->pay_module->testmode
+        );
         $this->debugLog('CityPay Paylink request URL: ' . $url);
         $this->debugLog('POST data to ' . $url . ' with data /\n' . $json);
 

@@ -32,8 +32,6 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 	public $cp_subscriptions;
 	public $subs_merchant_id;
 	public $client_id;
-	public $subscription_sync_enabled;
-	public $subscription_sync_cutoff_day;
 	public $licence_key;
 	public $version;
 	public $cart_desc;
@@ -79,8 +77,6 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 		$this->cp_subscriptions   = $this->get_option( 'cp_subscriptions', 'no' );
 		$this->subs_merchant_id   = $this->get_option( 'subs_merchant_id', '' );
 		$this->client_id          = $this->get_option( 'client_id', '' );
-		$this->subscription_sync_enabled    = $this->get_option( 'subscription_sync_enabled', 'no' );
-		$this->subscription_sync_cutoff_day = $this->get_option( 'subscription_sync_cutoff_day', '7' );
 		$this->subscriptions_prefix = $this->get_option( 'subscriptions_prefix', '' );
 		$this->cart_desc          = $this->get_option( 'cart_desc', __( 'Your order from StoreName', 'wc-payment-gateway-citypay' ) );
 		$this->t_ident_prefix     = $this->get_option( 't_ident_prefix', 'OrderID#' );
@@ -366,8 +362,8 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 			$cart_desc = trim( $this->cart_desc );
 			if ( $cart_desc === '' ) { $cart_desc = 'Order ' . $order_num; }
 
-				$this->paylink->setBaseCall(
-					$this->get_checkout_merchant_id( $order ),
+			$this->paylink->setBaseCall(
+				$this->get_checkout_merchant_id( $order ),
 				$this->licence_key,
 				$cart_id,
 				$this->get_paylink_amount_for_order( $order ),
@@ -423,14 +419,14 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 						$this->paylink->setTxType( 'E' );
 					}
 				}
-				}
+			}
 
-				$paylinkToken = $this->paylink->createPaylinkToken();
-				$paylink_token_id = $paylinkToken['token'] ?? $paylinkToken['id'] ?? '';
-				$order->add_order_note( 'CityPay Paylink Token: ' . $paylink_token_id );
-				$this->update_entity_meta_value( $order, 'CityPay Paylink Token', $paylink_token_id );
+			$paylinkToken = $this->paylink->createPaylinkToken();
+			$paylink_token_id = $paylinkToken['token'] ?? $paylinkToken['id'] ?? '';
+			$order->add_order_note( 'CityPay Paylink Token: ' . $paylink_token_id );
+			$this->update_entity_meta_value( $order, 'CityPay Paylink Token', $paylink_token_id );
 
-				return $paylinkToken['url'];
+			return $paylinkToken['url'];
 
 		} catch ( Exception $e ) {
 			$order->add_order_note( $e->getMessage() );
@@ -449,38 +445,43 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 
 	protected function get_checkout_merchant_id( $order ) {
 		if ( ! ( $order instanceof WC_Order ) ) {
+			$this->debugLog( 'Using default merchant ID because checkout order was not a WC_Order instance.' );
 			return $this->merchant_id;
 		}
 
-		if ( $this->is_subscriptions_enabled()
+		$is_subscription_checkout = $this->is_subscriptions_enabled()
 			&& ! empty( $this->subs_merchant_id )
 			&& function_exists( 'wcs_order_contains_subscription' )
-			&& wcs_order_contains_subscription( $order->get_id() ) ) {
+			&& wcs_order_contains_subscription( $order->get_id() );
+
+		if ( $is_subscription_checkout ) {
+			$this->debugLog( 'Using subscriptions merchant ID for checkout order #' . $order->get_id() . '.' );
 			return $this->subs_merchant_id;
 		}
 
+		$this->debugLog( 'Using default merchant ID for checkout order #' . $order->get_id() . '.' );
 		return $this->merchant_id;
 	}
 
-		protected function get_paylink_amount_for_order( $order ) {
-			if ( ! ( $order instanceof WC_Order ) ) {
-				return 0;
-			}
+	protected function get_paylink_amount_for_order( $order ) {
+		if ( ! ( $order instanceof WC_Order ) ) {
+			return 0;
+		}
 
 		$total = $order->get_total();
 
-			if ( $this->is_subscriptions_enabled()
-				&& class_exists( 'WC_Subscriptions_Order' )
-				&& function_exists( 'wcs_order_contains_subscription' )
-				&& function_exists( 'citypay_is_synchronised_subscription_product' ) ) {
-				if ( wcs_order_contains_subscription( $order->get_id() ) ) {
-					foreach ( $order->get_items() as $item ) {
-						$product = $item->get_product();
+		if ( $this->is_subscriptions_enabled()
+			&& class_exists( 'WC_Subscriptions_Order' )
+			&& function_exists( 'wcs_order_contains_subscription' )
+			&& function_exists( 'citypay_is_synchronised_subscription_product' )
+			&& wcs_order_contains_subscription( $order->get_id() ) ) {
+			foreach ( $order->get_items() as $item ) {
+				$product = $item->get_product();
 
-						if ( $product && citypay_is_synchronised_subscription_product( $product ) ) {
-							$total = WC_Subscriptions_Order::get_total_initial_payment( $order );
-							break;
-						}
+				if ( $product && citypay_is_synchronised_subscription_product( $product ) ) {
+					$total = WC_Subscriptions_Order::get_total_initial_payment( $order );
+					$this->debugLog( 'Using synchronized subscription initial payment amount for order #' . $order->get_id() . ': ' . $total );
+					break;
 				}
 			}
 		}
@@ -493,28 +494,28 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 			return false;
 		}
 
-			if ( ! function_exists( 'wcs_order_contains_subscription' ) || ! wcs_order_contains_subscription( $order->get_id() ) ) {
-				return false;
+		if ( ! function_exists( 'wcs_order_contains_subscription' ) || ! wcs_order_contains_subscription( $order->get_id() ) ) {
+			return false;
+		}
+
+		if ( ! function_exists( 'citypay_is_synchronised_subscription_product' ) ) {
+			return false;
+		}
+
+		$has_synced_product = false;
+
+		foreach ( $order->get_items() as $item ) {
+			$product = $item->get_product();
+
+			if ( $product && citypay_is_synchronised_subscription_product( $product ) ) {
+				$has_synced_product = true;
+				break;
 			}
+		}
 
-			if ( ! function_exists( 'citypay_is_synchronised_subscription_product' ) ) {
-				return false;
-			}
-
-			$has_synced_product = false;
-
-			foreach ( $order->get_items() as $item ) {
-				$product = $item->get_product();
-
-				if ( $product && citypay_is_synchronised_subscription_product( $product ) ) {
-					$has_synced_product = true;
-					break;
-				}
-			}
-
-			if ( ! $has_synced_product ) {
-				return false;
-			}
+		if ( ! $has_synced_product ) {
+			return false;
+		}
 
 		return $this->get_paylink_amount_for_order( $order ) === 0;
 	}

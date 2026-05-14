@@ -138,6 +138,13 @@ trait WC_Gateway_CP_Subscriptions
                 throw new Exception('Missing CityPay AccountNo for subscription #' . $subscription_id . '.');
             }
 
+            $this->debugLog(
+                'Preparing renewal charge for order #' . $renewal_order_id .
+                ', subscription #' . $subscription_id .
+                ', merchant_id=' . $merchant_id .
+                ', amount=' . $amount_to_charge
+            );
+
             $account = $this->account_retrieval($accountNo);
 
             $token = array_values($account['cards'])[0]['token'];
