@@ -18,7 +18,7 @@ the CityPay secure web application. Once a payment has been completed it
 will attempt to connect via a webhook or postback to your website.
 
 The plugin also supports WooCommerce Subscriptions, including synchronized-renewal
-products with optional CityPay cutoff-day handling for monthly subscriptions.
+products and WooCommerce native grace-period flows.
 
 == Installation ==
 

@@ -204,24 +204,6 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 				'default'     => '',
 				'placeholder' => 'Subscriptions Merchant ID',
 			),
-			'subscription_sync_enabled' => array(
-				'title'       => __( 'CityPay Zero-Amount Setup For Synchronized Renewals', 'wc-payment-gateway-citypay' ),
-				'type'        => 'checkbox',
-				'label'       => __( 'Enable CityPay cutoff-day logic for synchronized monthly subscriptions', 'wc-payment-gateway-citypay' ),
-				'default'     => 'no',
-				'description' => __( 'Requires WooCommerce Subscriptions synchronized renewals to be enabled. Turn this on in WooCommerce > Settings > Subscriptions by enabling Synchronise Renewals, then configure the subscription product to renew on the required day (for example the 1st of the month). On or before the cutoff day, the first recurring amount is charged at sign-up. After the cutoff day, the initial CityPay amount is 0 and the first payment is taken on the next synchronized renewal date. For best results, set Prorate First Renewal to "Never (do not charge any recurring amount)".', 'wc-payment-gateway-citypay' ),
-			),
-			'subscription_sync_cutoff_day' => array(
-				'title'             => __( 'CityPay Cutoff Day', 'wc-payment-gateway-citypay' ),
-				'type'              => 'number',
-				'description'       => __( 'Orders placed after this day use a 0-amount CityPay setup for synchronized monthly subscriptions. Recommended range: 1-28.', 'wc-payment-gateway-citypay' ),
-				'default'           => '7',
-				'custom_attributes' => array(
-					'min'  => '1',
-					'max'  => '28',
-					'step' => '1',
-				),
-			),
 
 			// Marks / card logos
 			'card_logo_section' => array(

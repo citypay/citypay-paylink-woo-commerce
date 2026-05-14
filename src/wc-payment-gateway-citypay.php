@@ -31,22 +31,6 @@ if ( ! function_exists( 'citypay_gateway_woocommerce_missing_notice' ) ) {
 			'</p></div>';
 	}
 }
-if ( ! function_exists( 'citypay_get_subscription_alignment_settings' ) ) {
-	function citypay_get_subscription_alignment_settings() {
-		$settings = get_option( 'woocommerce_citypay_settings', array() );
-		$enabled  = isset( $settings['subscription_sync_enabled'] ) && $settings['subscription_sync_enabled'] === 'yes';
-		$cutoff   = isset( $settings['subscription_sync_cutoff_day'] ) ? absint( $settings['subscription_sync_cutoff_day'] ) : 7;
-
-		if ( $cutoff < 1 || $cutoff > 28 ) {
-			$cutoff = 7;
-		}
-
-		return array(
-			'enabled'    => $enabled,
-			'cutoff_day' => $cutoff,
-		);
-	}
-}
 if ( ! function_exists( 'citypay_is_synchronised_subscription_product' ) ) {
 	function citypay_is_synchronised_subscription_product( $product ) {
 		if ( ! ( $product instanceof WC_Product ) || ! class_exists( 'WC_Subscriptions_Product' ) ) {
@@ -74,31 +58,6 @@ if ( ! function_exists( 'citypay_is_synchronised_subscription_product' ) ) {
 		return ! empty( $sync_date );
 	}
 }
-if ( ! function_exists( 'citypay_is_cutoff_override_enabled_for_product' ) ) {
-	function citypay_is_cutoff_override_enabled_for_product( $product ) {
-		$settings = citypay_get_subscription_alignment_settings();
-
-		if ( empty( $settings['enabled'] ) || ! class_exists( 'WC_Subscriptions_Product' ) ) {
-			return false;
-		}
-
-		return citypay_is_synchronised_subscription_product( $product )
-			&& WC_Subscriptions_Product::get_period( $product ) === 'month';
-	}
-}
-if ( ! function_exists( 'citypay_should_use_zero_amount_sync_now' ) ) {
-	function citypay_should_use_zero_amount_sync_now( $product ) {
-		if ( ! citypay_is_cutoff_override_enabled_for_product( $product ) ) {
-			return false;
-		}
-
-		$settings   = citypay_get_subscription_alignment_settings();
-		$cutoff_day = $settings['cutoff_day'];
-		$today      = function_exists( 'current_datetime' ) ? current_datetime() : new DateTimeImmutable( 'now', wp_timezone() );
-
-		return (int) $today->format( 'j' ) > $cutoff_day;
-	}
-}
 
 /* -----------------------
  * Bootstrap the gateway
@@ -124,31 +83,6 @@ add_action( 'plugins_loaded', function () {
 		$methods[] = 'WC_Gateway_CityPayPaylink';
 		return $methods;
 	} );
-
-	add_filter( 'woocommerce_subscriptions_product_sign_up_fee', function( $sign_up_fee, $product ) {
-		if ( ! function_exists( 'citypay_is_cutoff_override_enabled_for_product' ) || ! citypay_is_cutoff_override_enabled_for_product( $product ) ) {
-			return $sign_up_fee;
-		}
-
-		if ( citypay_should_use_zero_amount_sync_now( $product ) ) {
-			return 0;
-		}
-
-		if ( ! ( $product instanceof WC_Product ) ) {
-			return $sign_up_fee;
-		}
-
-		$subscription_price = $product->get_meta( '_subscription_price', true );
-
-		if ( '' === $subscription_price && method_exists( $product, 'get_parent_id' ) ) {
-			$parent_id = $product->get_parent_id();
-			if ( $parent_id ) {
-				$subscription_price = get_post_meta( $parent_id, '_subscription_price', true );
-			}
-		}
-
-		return '' === $subscription_price ? (float) $sign_up_fee : (float) $subscription_price;
-	}, 10, 2 );
 }, 20 );
 
 /* ---------------------------
