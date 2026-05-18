@@ -345,7 +345,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 			if ( $cart_desc === '' ) { $cart_desc = 'Order ' . $order_num; }
 
 			$this->paylink->setBaseCall(
-				$this->get_checkout_merchant_id( $order ),
+				$this->merchant_id,
 				$this->licence_key,
 				$cart_id,
 				$this->get_paylink_amount_for_order( $order ),
@@ -423,26 +423,6 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 		}
 		$url = $this->generate_paylink_url( $order_id );
 		return array( 'result' => 'success', 'redirect' => $url );
-	}
-
-	protected function get_checkout_merchant_id( $order ) {
-		if ( ! ( $order instanceof WC_Order ) ) {
-			$this->debugLog( 'Using default merchant ID because checkout order was not a WC_Order instance.' );
-			return $this->merchant_id;
-		}
-
-		$is_subscription_checkout = $this->is_subscriptions_enabled()
-			&& ! empty( $this->subs_merchant_id )
-			&& function_exists( 'wcs_order_contains_subscription' )
-			&& wcs_order_contains_subscription( $order->get_id() );
-
-		if ( $is_subscription_checkout ) {
-			$this->debugLog( 'Using subscriptions merchant ID for checkout order #' . $order->get_id() . '.' );
-			return $this->subs_merchant_id;
-		}
-
-		$this->debugLog( 'Using default merchant ID for checkout order #' . $order->get_id() . '.' );
-		return $this->merchant_id;
 	}
 
 	protected function get_paylink_amount_for_order( $order ) {
