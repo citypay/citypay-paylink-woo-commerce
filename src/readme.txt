@@ -3,7 +3,7 @@ Contributors: citypay
 Tags: ecommerce, e-commerce, woocommerce, payment gateway
 Requires at least: 4.0
 Tested up to: 6.9
-Stable tag: 2.1.11-beta1
+Stable tag: 2.1.11-beta2
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -114,6 +114,11 @@ The location of the log file is provided on the plugin settings form.
 
 
 == Changelog ==
+
+= 2.1.11-beta2 =
+
+* Update release notes.
+
 
 = 2.1.11-beta1 =
 
