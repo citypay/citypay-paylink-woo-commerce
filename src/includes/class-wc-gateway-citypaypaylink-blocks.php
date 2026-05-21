@@ -41,6 +41,15 @@ if ( ! class_exists( 'WC_Gateway_CityPayPaylink_Blocks', false ) && class_exists
             return isset( $this->settings['enabled'] ) && 'yes' === $this->settings['enabled'];
         }
 
+        /**
+         * Hardcode the support flags exposed to WooCommerce Blocks.
+         *
+         * @return array<int, string>
+         */
+        public function get_supported_features() {
+            return array( 'products', 'subscriptions' );
+        }
+
         public function get_payment_method_script_handles() {
             $handle = 'wc-citypay-blocks';
             $url    = plugin_dir_url( __FILE__ ) . '../assets/js/blocks-citypay.js';
@@ -102,7 +111,7 @@ if ( ! class_exists( 'WC_Gateway_CityPayPaylink_Blocks', false ) && class_exists
                 'title'       => wp_kses_post( $title ),
                 'description' => wp_kses_post( $description ),
                 'icons'       => $icons,
-                'supports'    => array( 'products' ),
+                'supports'    => $this->get_supported_features(),
                 'isActive'    => $this->is_active(),
                 'gatewayId'   => $this->get_name(),
             );
