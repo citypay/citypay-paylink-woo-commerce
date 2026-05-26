@@ -20,7 +20,7 @@ RUN curl -Lo ngrok.zip https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linu
     && rm ngrok.zip
 
 ENV WOOCOMMERCE_VERSION 9.3.3
-ENV CITYPAY_PLUGIN_VERSION 2.1.11-beta4
+ENV CITYPAY_PLUGIN_VERSION 2.1.11
 
 COPY scripts/*.sh /usr/local/bin/
 
