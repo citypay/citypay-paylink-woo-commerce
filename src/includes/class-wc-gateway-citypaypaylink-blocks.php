@@ -13,6 +13,9 @@ if ( ! class_exists( 'WC_Gateway_CityPayPaylink_Blocks', false ) && class_exists
         /** @var string Must match $this->id in WC_Gateway_CityPay_Paylink */
         protected $name = 'citypay';
 
+        /** @var array<string, mixed> */
+        protected $settings = array();
+
         /** @var WC_Gateway_CityPayPaylink|null */
         protected $gateway = null;
 
@@ -21,6 +24,8 @@ if ( ! class_exists( 'WC_Gateway_CityPayPaylink_Blocks', false ) && class_exists
         }
 
         public function initialize() {
+            $this->settings = get_option( 'woocommerce_' . $this->name . '_settings', array() );
+
             // Reuse the PHP gateway instance (for title/description/is_available())
             if ( function_exists( 'WC' ) && WC()->payment_gateways() ) {
                 $all = WC()->payment_gateways()->payment_gateways();
@@ -29,9 +34,20 @@ if ( ! class_exists( 'WC_Gateway_CityPayPaylink_Blocks', false ) && class_exists
         }
 
         public function is_active() {
-            return $this->gateway instanceof WC_Gateway_CityPayPaylink
-                ? $this->gateway->is_available()
-                : false;
+            if ( $this->gateway instanceof WC_Gateway_CityPayPaylink ) {
+                return $this->gateway->is_available();
+            }
+
+            return isset( $this->settings['enabled'] ) && 'yes' === $this->settings['enabled'];
+        }
+
+        /**
+         * Hardcode the support flags exposed to WooCommerce Blocks.
+         *
+         * @return array<int, string>
+         */
+        public function get_supported_features() {
+            return array( 'products', 'subscriptions' );
         }
 
         public function get_payment_method_script_handles() {
@@ -53,8 +69,14 @@ if ( ! class_exists( 'WC_Gateway_CityPayPaylink_Blocks', false ) && class_exists
         }
 
         public function get_payment_method_data() {
-            $title       = $this->gateway ? $this->gateway->get_title() : __( 'CityPay', 'wc-payment-gateway-citypay' );
-            $description = $this->gateway ? wp_kses_post( $this->gateway->get_description() ) : '';
+            $title       = $this->gateway
+                ? $this->gateway->get_title()
+                : ( isset( $this->settings['title'] ) && '' !== $this->settings['title']
+                    ? $this->settings['title']
+                    : __( 'CityPay', 'wc-payment-gateway-citypay' ) );
+            $description = $this->gateway
+                ? wp_kses_post( $this->gateway->get_description() )
+                : ( isset( $this->settings['description'] ) ? wp_kses_post( $this->settings['description'] ) : '' );
             $icons       = array();
 
             // Always show the CityPay mark first
@@ -64,7 +86,7 @@ if ( ! class_exists( 'WC_Gateway_CityPayPaylink_Blocks', false ) && class_exists
             );
 
             // Pull settings and map to marks
-            $settings  = get_option( 'woocommerce_citypay_settings', array() );
+            $settings  = $this->settings;
             $get       = function( $key, $default = 'no' ) use ( $settings ) {
                 return isset( $settings[ $key ] ) ? $settings[ $key ] : $default;
             };
@@ -89,7 +111,7 @@ if ( ! class_exists( 'WC_Gateway_CityPayPaylink_Blocks', false ) && class_exists
                 'title'       => wp_kses_post( $title ),
                 'description' => wp_kses_post( $description ),
                 'icons'       => $icons,
-                'supports'    => array( 'products' ),
+                'supports'    => $this->get_supported_features(),
                 'isActive'    => $this->is_active(),
                 'gatewayId'   => $this->get_name(),
             );

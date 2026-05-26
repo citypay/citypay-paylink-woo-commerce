@@ -122,6 +122,13 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 				'default'     => __( 'Pay using a credit or debit card via CityPay', 'wc-payment-gateway-citypay' ),
 				'desc_tip'    => true,
 			),
+			'client_id' => array(
+				'title'       => __( 'Client ID', 'wc-payment-gateway-citypay' ),
+				'type'        => 'text',
+				'description' => __( 'Your CityPay Client ID (required for Paylink token creation, subscriptions and API auth).', 'wc-payment-gateway-citypay' ),
+				'default'     => '',
+				'placeholder' => 'Client ID',
+			),
 			'merchant_id' => array(
 				'title'       => __( 'Merchant ID', 'wc-payment-gateway-citypay' ),
 				'type'        => 'text',
@@ -182,13 +189,6 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 				'label'       => __( 'Enable Subscriptions', 'wc-payment-gateway-citypay' ),
 				'default'     => 'no',
 				'description' => __( 'Accept WooCommerce Subscriptions via CityPay.', 'wc-payment-gateway-citypay' ),
-			),
-			'client_id' => array(
-				'title'       => __( 'Client ID', 'wc-payment-gateway-citypay' ),
-				'type'        => 'text',
-				'description' => __( 'Your CityPay Client ID (required for subscriptions and API auth).', 'wc-payment-gateway-citypay' ),
-				'default'     => '',
-				'placeholder' => 'Client ID',
 			),
 			'subscriptions_prefix' => array(
 				'title'       => __( 'Subscriptions Prefix', 'wc-payment-gateway-citypay' ),
@@ -348,7 +348,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 				$this->merchant_id,
 				$this->licence_key,
 				$cart_id,
-				$this->formatedAmount( $order->get_total() ),
+				$this->get_paylink_amount_for_order( $order ),
 				get_woocommerce_currency(),
 				$cart_desc
 			);
@@ -377,25 +377,36 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 			// Subscriptions (if WC Subscriptions present and order contains a subscription)
 			if ( $this->is_subscriptions_enabled() && function_exists( 'wcs_order_contains_subscription' ) ) {
 				if ( wcs_order_contains_subscription( $order_id ) ) {
-					$subscriptions   = wcs_get_subscriptions_for_order( $order_id );
-					$subscription    = array_values( $subscriptions )[0];
-					$subscription_id = $subscription->get_id();
-
-					$order->add_order_note( 'Added fields to create card holder account. Subscription ID: ' . $subscription_id );
-
 					$accountNo = $this->subscriptions_prefix . $order->get_customer_id() . bin2hex( random_bytes( 16 ) );
-					update_post_meta( $subscription_id, 'AccountNo', $accountNo );
-					$subscription->add_order_note( 'Subscription AccountNo: ' . $accountNo );
+					$this->save_subscription_account_no_to_order( $order, $accountNo );
 
-					$this->paylink->addSubscriptionId( $subscription_id );
+					$subscriptions   = wcs_get_subscriptions_for_order( $order_id );
+					if ( ! empty( $subscriptions ) ) {
+						$subscription    = array_values( $subscriptions )[0];
+						$subscription_id = $subscription->get_id();
+
+						$order->add_order_note( 'Added fields to create card holder account. Subscription ID: ' . $subscription_id );
+						$this->update_entity_meta_value( $subscription, 'AccountNo', $accountNo );
+						$subscription->add_order_note( 'Subscription AccountNo: ' . $accountNo );
+						$this->paylink->addSubscriptionId( $subscription_id );
+					} else {
+						$order->add_order_note( 'Generated CityPay subscription AccountNo before subscription record was available.' );
+						$this->debugLog( 'No subscription record found yet for order #' . $order_id . ' while generating Paylink URL.' );
+					}
+
 					$this->paylink->setOptionsAndAccountNo( $accountNo );
 					$this->paylink->setRecurring( true );
+
+					if ( $this->is_zero_amount_sync_subscription_order( $order ) ) {
+						$this->paylink->setTxType( 'E' );
+					}
 				}
 			}
 
 			$paylinkToken = $this->paylink->createPaylinkToken();
-			$order->add_order_note( 'CityPay Paylink Token: ' . $paylinkToken['id'] );
-			update_post_meta( $order->get_id(), 'CityPay Paylink Token', $paylinkToken['id'] );
+			$paylink_token_id = $paylinkToken['token'] ?? $paylinkToken['id'] ?? '';
+			$order->add_order_note( 'CityPay Paylink Token: ' . $paylink_token_id );
+			$this->update_entity_meta_value( $order, 'CityPay Paylink Token', $paylink_token_id );
 
 			return $paylinkToken['url'];
 
@@ -412,6 +423,120 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 		}
 		$url = $this->generate_paylink_url( $order_id );
 		return array( 'result' => 'success', 'redirect' => $url );
+	}
+
+	protected function get_paylink_amount_for_order( $order ) {
+		if ( ! ( $order instanceof WC_Order ) ) {
+			return 0;
+		}
+
+		$total = $order->get_total();
+
+		if ( $this->is_subscriptions_enabled()
+			&& class_exists( 'WC_Subscriptions_Order' )
+			&& function_exists( 'wcs_order_contains_subscription' )
+			&& function_exists( 'citypay_is_synchronised_subscription_product' )
+			&& wcs_order_contains_subscription( $order->get_id() ) ) {
+			foreach ( $order->get_items() as $item ) {
+				$product = $item->get_product();
+
+				if ( $product && citypay_is_synchronised_subscription_product( $product ) ) {
+					$total = WC_Subscriptions_Order::get_total_initial_payment( $order );
+					$this->debugLog( 'Using synchronized subscription initial payment amount for order #' . $order->get_id() . ': ' . $total );
+					break;
+				}
+			}
+		}
+
+		return $this->formatedAmount( $total );
+	}
+
+	protected function is_zero_amount_sync_subscription_order( $order ) {
+		if ( ! ( $order instanceof WC_Order ) || ! $this->is_subscriptions_enabled() ) {
+			return false;
+		}
+
+		if ( ! function_exists( 'wcs_order_contains_subscription' ) || ! wcs_order_contains_subscription( $order->get_id() ) ) {
+			return false;
+		}
+
+		if ( ! function_exists( 'citypay_is_synchronised_subscription_product' ) ) {
+			return false;
+		}
+
+		$has_synced_product = false;
+
+		foreach ( $order->get_items() as $item ) {
+			$product = $item->get_product();
+
+			if ( $product && citypay_is_synchronised_subscription_product( $product ) ) {
+				$has_synced_product = true;
+				break;
+			}
+		}
+
+		if ( ! $has_synced_product ) {
+			return false;
+		}
+
+		return $this->get_paylink_amount_for_order( $order ) === 0;
+	}
+
+	protected function get_subscription_account_meta_key() {
+		return '_citypay_account_no';
+	}
+
+	protected function get_entity_meta_value( $entity, $key ) {
+		if ( $entity instanceof WC_Data ) {
+			return $entity->get_meta( $key, true );
+		}
+
+		return '';
+	}
+
+	protected function update_entity_meta_value( $entity, $key, $value ) {
+		if ( ! ( $entity instanceof WC_Data ) ) {
+			return;
+		}
+
+		$entity->update_meta_data( $key, $value );
+		$entity->save_meta_data();
+	}
+
+	protected function save_subscription_account_no_to_order( $order, $accountNo ) {
+		if ( ! ( $order instanceof WC_Order ) || empty( $accountNo ) ) {
+			return;
+		}
+
+		$this->update_entity_meta_value( $order, $this->get_subscription_account_meta_key(), $accountNo );
+	}
+
+	protected function sync_subscription_account_no_from_order( $order ) {
+		if ( ! ( $order instanceof WC_Order ) || ! $this->is_subscriptions_enabled() || ! function_exists( 'wcs_get_subscriptions_for_order' ) ) {
+			return;
+		}
+
+		$accountNo = $this->get_entity_meta_value( $order, $this->get_subscription_account_meta_key() );
+		if ( empty( $accountNo ) ) {
+			return;
+		}
+
+		$subscriptions = wcs_get_subscriptions_for_order( $order->get_id() );
+		if ( empty( $subscriptions ) ) {
+			$this->debugLog( 'No subscriptions found to sync AccountNo for order #' . $order->get_id() );
+			return;
+		}
+
+		foreach ( $subscriptions as $subscription ) {
+			if ( ! $subscription || ! method_exists( $subscription, 'get_id' ) ) {
+				continue;
+			}
+
+			$subscription_id = $subscription->get_id();
+			$this->update_entity_meta_value( $subscription, 'AccountNo', $accountNo );
+			$subscription->add_order_note( 'Subscription AccountNo: ' . $accountNo );
+			$this->debugLog( 'Synced AccountNo to subscription #' . $subscription_id . ' for order #' . $order->get_id() );
+		}
 	}
 
 	/**
@@ -528,15 +653,15 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 
 			if ( $b_authorised ) {
 				$this->debugLog( 'check_postback entering authorised branch for order #' . $order->get_id() );
-				update_post_meta( $order->get_id(), 'CityPay TransNo', $trans_no );
+				$order->update_meta_data( 'CityPay TransNo', $trans_no );
 				if ( isset( $postback_data['identifier'] ) ) {
-					update_post_meta( $order->get_id(), 'CityPay Identifier', $postback_data['identifier'] );
+					$order->update_meta_data( 'CityPay Identifier', $postback_data['identifier'] );
 				}
 				$maskedpan_long =
 					( $postback_data['cardscheme'] ?? '' ) . '/' .
 					( $postback_data['maskedpan'] ?? '' ) . ' ' .
 					( $postback_data['expyear'] ?? '' ) . '/' . $expmonth;
-				update_post_meta( $order->get_id(), 'Card used', $maskedpan_long );
+				$order->update_meta_data( 'Card used', $maskedpan_long );
 
 				// Attribution meta for admin UI
 				$amount_minor   = isset( $postback_data['amount'] ) ? (int) $postback_data['amount'] : 0;
@@ -552,15 +677,16 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 				$dt_display    = $dt_iso;
 				if ( ! empty( $dt_iso ) ) { $ts = strtotime( $dt_iso ); if ( $ts ) { $dt_display = date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $ts ); } }
 
-				update_post_meta( $order->get_id(), '_cp_attrib_authcode',            (string) $authcode );
-				update_post_meta( $order->get_id(), '_cp_attrib_amount_display',      $amount_display );
-				update_post_meta( $order->get_id(), '_cp_attrib_authorised_display',  'Yes' );
-				update_post_meta( $order->get_id(), '_cp_attrib_card_scheme',         $card_scheme );
-				update_post_meta( $order->get_id(), '_cp_attrib_name_on_card',        $name_on_card );
-				update_post_meta( $order->get_id(), '_cp_attrib_masked_pan',          $masked_pan );
-				update_post_meta( $order->get_id(), '_cp_attrib_transno',             (string) $trans_no );
-				update_post_meta( $order->get_id(), '_cp_attrib_datetime_iso',        $dt_iso );
-				update_post_meta( $order->get_id(), '_cp_attrib_datetime_display',    $dt_display );
+				$order->update_meta_data( '_cp_attrib_authcode',         (string) $authcode );
+				$order->update_meta_data( '_cp_attrib_amount_display',   $amount_display );
+				$order->update_meta_data( '_cp_attrib_authorised_display', 'Yes' );
+				$order->update_meta_data( '_cp_attrib_card_scheme',      $card_scheme );
+				$order->update_meta_data( '_cp_attrib_name_on_card',     $name_on_card );
+				$order->update_meta_data( '_cp_attrib_masked_pan',       $masked_pan );
+				$order->update_meta_data( '_cp_attrib_transno',          (string) $trans_no );
+				$order->update_meta_data( '_cp_attrib_datetime_iso',     $dt_iso );
+				$order->update_meta_data( '_cp_attrib_datetime_display', $dt_display );
+				$order->save_meta_data();
 
 				$order->add_order_note( sprintf(
 					'%s CityPay Postback Payment OK. TransNo: %s, AuthCode: %s',
@@ -570,6 +696,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 				) );
 				$this->debugLog( 'check_postback before payment_complete for order #' . $order->get_id() . ' current_status=' . $order->get_status() );
 				$order->payment_complete();
+				$this->sync_subscription_account_no_from_order( $order );
 				$this->debugLog( 'check_postback payment_complete done for order #' . $order->get_id() . ' new_status=' . $order->get_status() );
 				header( 'HTTP/1.1 200 OK' );
 				return;

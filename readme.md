@@ -152,5 +152,6 @@ NGROK_AUTHTOKEN=...your authtoken for ngrok
 # WooCommerce Subscriptions
 
 * [CityPay WooCommerce Subscriptions Documentation](src/wc-subscriptions.md)
+* Supports WooCommerce synchronized-renewal products, including WooCommerce native grace-period flows.
 
  

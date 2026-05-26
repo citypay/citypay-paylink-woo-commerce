@@ -12,7 +12,7 @@ Allows you to sell products and services with recurring payments using [CityPay 
 * WooCommerce Subscriptions 4.4.0 or greater (Tested up to: 5.0.1)
 * Cron [Working WP Cron](https://woocommerce.com/document/subscriptions/requirements/#section-2)
 * Site URL [Live site served exclusively on one URL](https://woocommerce.com/document/subscriptions-handles-staging-sites/#section-11)
-* [CityPay Paylink WooCommerce Plugin 2.1.10](https://github.com/citypay/citypay-paylink-woo-commerce)
+* [CityPay Paylink WooCommerce Plugin 2.1.11](https://github.com/citypay/citypay-paylink-woo-commerce)
 
 ## Set up 
 
@@ -24,22 +24,23 @@ Allows you to sell products and services with recurring payments using [CityPay 
 
 ## Creating a subscription product
 Please follow the [Subscriptions Store Manager Guide](https://woocommerce.com/document/subscriptions/store-manager-guide/) and take in consideration our Supported/Unsupported Features.
+For synchronized renewals, configure the renewal day in WooCommerce Subscriptions and use WooCommerce's native `Prorate First Renewal` and `Sign-up grace period` settings to control whether the recurring amount is charged at sign-up or deferred until the next synchronized renewal date.
 
 
 ## WooCommerce Subscriptions - Supported Features
 
 * Sign-Up Fees - Charge an initial amount to account for customer setup costs.
+* Free Trials with subsequent recurring payments.
 * Variable Subscriptions - Create variable subscription products and allow your customers to choose a subscription that suits their needs.
 * Subscription Management - Store owners get full-featured subscription management.
 * Subscriber Account Management - Your customers can also manage their own subscriptions. With the My Account > View Subscription page.
 * Flexible Product Options - When creating a subscription product, you can make the product downloadable, virtual or physical, charge renewal payments weekly, monthly or annually.
 * Customer Emails - Automatically notify customers when a subscription renewal payment is processed, a subscription is cancelled or when a subscription has expired with the built-in subscription emails.
+* Synchronised Renewals - Supports WooCommerce synchronized-renewal products, including WooCommerce native grace-period flows that can defer the first recurring amount until the next synchronized renewal date.
 
 
 ##  WooCommerce Subscriptions - Unsupported Features
 
-* Free Trials with subsequents recurring payments.
-* Synchronise renewals - Align subscription renewal to a specific day of the week, month or year.
 * Upgrades/Downgrades - Allow subscribers to switch (upgrade or downgrade) between different subscriptions.
 * Limit the product to one-per-customer and even charge shipping only on the initial order.
 * Multiple Subscriptions - Purchase different subscription products in the same transaction.

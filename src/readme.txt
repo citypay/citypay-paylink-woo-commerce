@@ -3,7 +3,7 @@ Contributors: citypay
 Tags: ecommerce, e-commerce, woocommerce, payment gateway
 Requires at least: 4.0
 Tested up to: 6.9
-Stable tag: 2.1.10
+Stable tag: 2.1.11
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -16,6 +16,9 @@ The WooCommerce plugin works by creating a token and redirecting to the
 Paylink form for cardholders to enter their card details directly into
 the CityPay secure web application. Once a payment has been completed it
 will attempt to connect via a webhook or postback to your website.
+
+The plugin also supports WooCommerce Subscriptions, including synchronized-renewal
+products and WooCommerce native grace-period flows.
 
 == Installation ==
 
@@ -112,9 +115,16 @@ The location of the log file is provided on the plugin settings form.
 
 == Changelog ==
 
+= 2.1.11 =
+
+* Improved WooCommerce checkout compatibility.
+* Improved subscription payment handling.
+* Added internal fixes and logging improvements.
+
 = 2.1.10 =
 
 * Fixed duplicate action being added for the postback handler.
+* Updated subscription documentation to include synchronized-renewal support and the CityPay cutoff-day setup for monthly subscriptions.
 
 = 2.1.9 =
 
