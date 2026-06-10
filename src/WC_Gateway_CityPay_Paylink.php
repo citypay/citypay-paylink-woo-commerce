@@ -340,6 +340,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 			$order_num = ltrim( $order->get_order_number(), '#' );
 			$order_key = $order->get_order_key();
 			$cart_id   = $this->t_ident_prefix . $order_id;
+			$paylink_amount = $this->get_paylink_amount_for_order( $order );
 
 			$cart_desc = trim( $this->cart_desc );
 			if ( $cart_desc === '' ) { $cart_desc = 'Order ' . $order_num; }
@@ -348,7 +349,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 				$this->merchant_id,
 				$this->licence_key,
 				$cart_id,
-				$this->get_paylink_amount_for_order( $order ),
+				$paylink_amount,
 				get_woocommerce_currency(),
 				$cart_desc
 			);
@@ -397,8 +398,9 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 					$this->paylink->setOptionsAndAccountNo( $accountNo );
 					$this->paylink->setRecurring( true );
 
-					if ( $this->is_zero_amount_sync_subscription_order( $order ) ) {
+					if ( $this->is_zero_amount_subscription_order( $order, $paylink_amount ) ) {
 						$this->paylink->setTxType( 'E' );
+						$this->debugLog( 'Using setup tx_type E for zero amount subscription order #' . $order->get_id() );
 					}
 				}
 			}
@@ -451,7 +453,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 		return $this->formatedAmount( $total );
 	}
 
-	protected function is_zero_amount_sync_subscription_order( $order ) {
+	protected function is_zero_amount_subscription_order( $order, $paylink_amount = null ) {
 		if ( ! ( $order instanceof WC_Order ) || ! $this->is_subscriptions_enabled() ) {
 			return false;
 		}
@@ -460,26 +462,11 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 			return false;
 		}
 
-		if ( ! function_exists( 'citypay_is_synchronised_subscription_product' ) ) {
-			return false;
+		if ( is_null( $paylink_amount ) ) {
+			$paylink_amount = $this->get_paylink_amount_for_order( $order );
 		}
 
-		$has_synced_product = false;
-
-		foreach ( $order->get_items() as $item ) {
-			$product = $item->get_product();
-
-			if ( $product && citypay_is_synchronised_subscription_product( $product ) ) {
-				$has_synced_product = true;
-				break;
-			}
-		}
-
-		if ( ! $has_synced_product ) {
-			return false;
-		}
-
-		return $this->get_paylink_amount_for_order( $order ) === 0;
+		return (int) $paylink_amount === 0;
 	}
 
 	protected function get_subscription_account_meta_key() {
