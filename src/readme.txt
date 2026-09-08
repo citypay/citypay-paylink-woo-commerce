@@ -3,7 +3,7 @@ Contributors: citypay
 Tags: ecommerce, e-commerce, woocommerce, payment gateway
 Requires at least: 4.0
 Tested up to: 6.9
-Stable tag: 2.1.12
+Stable tag: 2.1.13
 License: GPLv2
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -114,6 +114,10 @@ The location of the log file is provided on the plugin settings form.
 
 
 == Changelog ==
+
+= 2.1.13 =
+
+* Fixed subscription account retrieval when account numbers contain URL-reserved characters such as #. Updated the Subscriptions Prefix setting guidance to list supported characters and explicitly advise against using #. Existing subscription account numbers remain compatible.
 
 = 2.1.12 =
 
