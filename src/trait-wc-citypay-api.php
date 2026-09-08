@@ -25,7 +25,9 @@ trait WC_CP_API {
     {
         $this->debugLog('WC_Gateway_CP_Subscriptions::accountRetrieval()');
 
-        $url = $this->get_api_host() . '/account/' . $accountNo;
+        // Account numbers can contain URL-reserved characters such as "#".
+        // Encode the value as one path segment so the complete account number is sent.
+        $url = $this->get_api_host() . '/account/' . rawurlencode($accountNo);
 
         $apiKey =  new ApiKey($this->client_id, $this->licence_key);
 

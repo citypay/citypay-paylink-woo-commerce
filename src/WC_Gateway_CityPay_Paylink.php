@@ -193,7 +193,7 @@ class WC_Gateway_CityPayPaylink extends WC_Gateway_CityPay {
 			'subscriptions_prefix' => array(
 				'title'       => __( 'Subscriptions Prefix', 'wc-payment-gateway-citypay' ),
 				'type'        => 'text',
-				'description' => __( 'Different prefixes for each store using the same Client ID. Max length: 8', 'wc-payment-gateway-citypay' ),
+				'description' => __( 'Use a different prefix for each store using the same Client ID. Use letters, numbers, hyphens (-), underscores (_), periods (.), or tildes (~) only; do not use #. Max length: 8.', 'wc-payment-gateway-citypay' ),
 				'default'     => '',
 				'placeholder' => 'Subscriptions Prefix',
 			),
